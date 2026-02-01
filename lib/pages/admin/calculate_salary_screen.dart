@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../widgets/app_sidebars.dart'; // ✅ Import Shared Sidebar
 
 class CalculateSalaryScreen extends StatelessWidget {
   const CalculateSalaryScreen({super.key});
@@ -9,46 +11,17 @@ class CalculateSalaryScreen extends StatelessWidget {
       backgroundColor: const Color(0xfff6f7f7),
       body: Row(
         children: [
-          // ================= SIDEBAR =================
-          Container(
-            width: 240,
-            color: Colors.white,
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-                ListTile(
-                  leading: Icon(Icons.school, color: Color(0xff45a182)),
-                  title: const Text(
-                    'College SMS',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: const Text('Admin Panel'),
-                ),
-                const Divider(),
-                _sideItem(Icons.dashboard, 'Dashboard'),
-                _sideItem(Icons.group, 'Manage Faculty'),
-                _sideItem(Icons.calculate, 'Calculate Salary', active: true),
-                _sideItem(Icons.history, 'Payment History'),
-                _sideItem(Icons.settings, 'Settings'),
-                const Spacer(),
-                const Divider(),
-                ListTile(
-                  leading: const CircleAvatar(child: Text('A')),
-                  title: const Text('Admin User'),
-                  subtitle: const Text('Log out'),
-                ),
-              ],
-            ),
-          ),
+          // ✅ USE SHARED SIDEBAR
+          const AdminSidebar(activeRoute: '/admin/calculate-salary'),
 
-          // ================= MAIN CONTENT =================
+          // MAIN CONTENT
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                   color: Colors.white,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -56,136 +29,53 @@ class CalculateSalaryScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
-                          Text(
-                            'Salary Calculation',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Text('Salary Calculation', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                           SizedBox(height: 4),
-                          Text('Review and process faculty payments'),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.download),
-                            label: const Text('Export CSV'),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xff45a182),
-                            ),
-                            onPressed: () {},
-                            icon: const Icon(Icons.article),
-                            label: const Text('Generate Report'),
-                          ),
+                          Text('Process payments for verified lectures', style: TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ],
                   ),
                 ),
 
-                // Filters
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      _dropdownBox('October 2023'),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search faculty...',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: 20),
 
-                // Table
+                // FACULTY SALARY TABLE
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Card(
-                      child: SingleChildScrollView(
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Faculty Name')),
-                            DataColumn(label: Text('Department')),
-                            DataColumn(label: Text('Lectures')),
-                            DataColumn(label: Text('Amount')),
-                            DataColumn(label: Text('Status')),
-                            DataColumn(label: Text('Action')),
-                          ],
-                          rows: [
-                            _row(
-                              name: 'Prof. John Doe',
-                              dept: 'Computer Science',
-                              lectures: '12',
-                              amount: '\$1,200',
-                              status: 'Pending',
-                            ),
-                            _row(
-                              name: 'Dr. Jane Smith',
-                              dept: 'Physics',
-                              lectures: '8',
-                              amount: '\$800',
-                              status: 'Paid',
-                            ),
-                            _row(
-                              name: 'Mr. Alan Turing',
-                              dept: 'Mathematics',
-                              lectures: '15',
-                              amount: '\$1,500',
-                              status: 'Pending',
-                            ),
-                            _row(
-                              name: 'Ms. Grace Hopper',
-                              dept: 'Computer Science',
-                              lectures: '10',
-                              amount: '\$1,000',
-                              status: 'Paid',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                    padding: const EdgeInsets.all(32),
+                    child: StreamBuilder<QuerySnapshot>(
+                      // 1. Get All Faculty Members
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .where('role', isEqualTo: 'faculty')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
-                // Bottom Info Cards
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: const [
-                      _InfoCard(
-                        icon: Icons.info,
-                        title: 'Payment Status',
-                        text:
-                        'Status updates automatically after confirmation.',
-                      ),
-                      SizedBox(width: 12),
-                      _InfoCard(
-                        icon: Icons.calculate,
-                        title: 'Lecture Rate',
-                        text: 'Default rate is \$100 per lecture.',
-                      ),
-                      SizedBox(width: 12),
-                      _InfoCard(
-                        icon: Icons.lock,
-                        title: 'Secure Action',
-                        text: 'Reports are locked after generation.',
-                      ),
-                    ],
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Center(child: Text("No faculty members found."));
+                        }
+
+                        final facultyDocs = snapshot.data!.docs;
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                          ),
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(0),
+                            itemCount: facultyDocs.length,
+                            separatorBuilder: (c, i) => const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              return _SalaryRow(facultyDoc: facultyDocs[index]);
+                            },
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -195,104 +85,148 @@ class CalculateSalaryScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ================= HELPERS =================
-
-  static Widget _sideItem(IconData icon, String text,
-      {bool active = false}) {
-    return ListTile(
-      leading: Icon(icon, color: active ? Color(0xff45a182) : Colors.grey),
-      title: Text(
-        text,
-        style: TextStyle(
-          color: active ? Color(0xff45a182) : Colors.black,
-          fontWeight: active ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-    );
-  }
-
-  static DataRow _row({
-    required String name,
-    required String dept,
-    required String lectures,
-    required String amount,
-    required String status,
-  }) {
-    return DataRow(
-      cells: [
-        DataCell(Text(name)),
-        DataCell(Text(dept)),
-        DataCell(Text(lectures)),
-        DataCell(Text(amount)),
-        DataCell(
-          Chip(
-            label: Text(status),
-            backgroundColor:
-            status == 'Paid' ? Colors.green.shade100 : Colors.amber.shade100,
-          ),
-        ),
-        DataCell(
-          TextButton(
-            onPressed: () {},
-            child: Text(status == 'Paid' ? 'Receipt' : 'Pay Now'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  static Widget _dropdownBox(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Text(text),
-    );
-  }
 }
 
-class _InfoCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String text;
+// ================= INDIVIDUAL ROW COMPONENT =================
+class _SalaryRow extends StatelessWidget {
+  final QueryDocumentSnapshot facultyDoc;
 
-  const _InfoCard({
-    required this.icon,
-    required this.title,
-    required this.text,
-  });
+  const _SalaryRow({required this.facultyDoc});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+    final data = facultyDoc.data() as Map<String, dynamic>;
+    final String uid = facultyDoc.id;
+    final String name = data['name'] ?? 'Unknown';
+    final String dept = data['department'] ?? '-';
+    // Ensure hourlyRate is treated as double
+    final double rate = (data['hourlyRate'] is int)
+        ? (data['hourlyRate'] as int).toDouble()
+        : (data['hourlyRate'] as double? ?? 0.0);
+
+    // 2. Stream "Verified" attendance for this specific user
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('attendance')
+          .where('uid', isEqualTo: uid)
+          .where('status', isEqualTo: 'Verified') // Only fetch what is OWED
+          .snapshots(),
+      builder: (context, attSnapshot) {
+
+        if (attSnapshot.connectionState == ConnectionState.waiting && !attSnapshot.hasData) {
+          return const LinearProgressIndicator();
+        }
+
+        final docs = attSnapshot.data?.docs ?? [];
+
+        // 3. Calculate Totals
+        int totalLectures = 0;
+        for (var doc in docs) {
+          totalLectures += (doc['lectures'] as int);
+        }
+
+        double totalAmount = totalLectures * rate;
+        bool isOwed = totalAmount > 0;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Row(
             children: [
-              Icon(icon, color: Color(0xff45a182)),
-              const SizedBox(width: 12),
+              // Name & Dept
               Expanded(
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(text, style: const TextStyle(fontSize: 12)),
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(dept.toUpperCase(), style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
                   ],
+                ),
+              ),
+
+              // Lectures Count
+              Expanded(
+                flex: 2,
+                child: Text("$totalLectures Lectures", style: const TextStyle(fontWeight: FontWeight.w500)),
+              ),
+
+              // Total Amount
+              Expanded(
+                flex: 2,
+                child: Text(
+                    "\$${totalAmount.toStringAsFixed(2)}",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)
+                ),
+              ),
+
+              // Status Badge
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isOwed ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isOwed ? "Pending" : "Paid Up",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: isOwed ? Colors.orange : Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12
+                    ),
+                  ),
+                ),
+              ),
+
+              // Action Button
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: isOwed
+                      ? ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff45a182)),
+                    onPressed: () => _payFaculty(context, uid, docs),
+                    child: const Text("Pay Now"),
+                  )
+                      : const Text("Receipt Generated", style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  // 4. PAY FUNCTION
+  Future<void> _payFaculty(BuildContext context, String uid, List<QueryDocumentSnapshot> docs) async {
+    bool confirm = await showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text("Confirm Payment"),
+          content: Text("Mark ${docs.length} attendance records as PAID?"),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text("Cancel")),
+            ElevatedButton(onPressed: () => Navigator.pop(c, true), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff45a182)), child: const Text("Confirm")),
+          ],
+        )
+    ) ?? false;
+
+    if (confirm) {
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (var doc in docs) {
+        batch.update(doc.reference, {'status': 'Paid'});
+      }
+
+      await batch.commit();
+
+      if(context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment Processed Successfully")));
+      }
+    }
   }
 }

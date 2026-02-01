@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff6f7f7),
@@ -45,24 +54,25 @@ class LoginPage extends StatelessWidget {
 
               // Email
               TextField(
-                decoration: InputDecoration(
+                controller: emailController,
+                decoration: const InputDecoration(
                   labelText: "Email",
-                  hintText: "faculty@college.edu",
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.email),
                 ),
               ),
+
               const SizedBox(height: 12),
 
               // Password
               TextField(
+                controller: passwordController,
                 obscureText: true,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: "Password",
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.lock),
                 ),
               ),
+
               const SizedBox(height: 20),
 
               // Login Button
@@ -75,18 +85,24 @@ class LoginPage extends StatelessWidget {
                   onPressed: () async {
                     try {
                       await FirebaseAuth.instance.signInWithEmailAndPassword(
-                        email: "admin@college.com",
-                        password: "123456",
+                        email: emailController.text.trim(),
+                        password: passwordController.text.trim(),
                       );
 
-                      // TEMP routing for testing
-                      Navigator.pushReplacementNamed(context, '/admin/dashboard');
+                      if (!mounted) return; // ✅ FIX
+
+                      await redirectBasedOnRole(context);
+
                     } catch (e) {
+                      if (!mounted) return; // ✅ FIX
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(e.toString())),
                       );
                     }
                   },
+
+
 
                   child: const Text("Login"),
                 ),
@@ -120,3 +136,27 @@ class LoginPage extends StatelessWidget {
     );
   }
 }
+
+Future<void> redirectBasedOnRole(BuildContext context) async {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  final userDoc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .get();
+
+  if (!userDoc.exists) {
+    throw Exception("User data not found in Firestore");
+  }
+
+  final role = userDoc['role'];
+
+  if (role == 'admin') {
+    Navigator.pushReplacementNamed(context, '/admin/dashboard');
+  } else if (role == 'faculty') {
+    Navigator.pushReplacementNamed(context, '/faculty/dashboard');
+  } else {
+    throw Exception("Invalid user role");
+  }
+}
+
