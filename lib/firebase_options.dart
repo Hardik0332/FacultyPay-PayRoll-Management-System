@@ -12,7 +12,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: "AIzaSyAQLBW90YxNmQqTLakZJPGgFYRILGaI2qI",
+    apiKey: "AIzaSyAQ1BW90YxNmQqTLakzJPGqFYRIlGaI2qI",
     authDomain: "fixed-project-new.firebaseapp.com",
     projectId: "fixed-project-new",
     storageBucket: "fixed-project-new.appspot.com",

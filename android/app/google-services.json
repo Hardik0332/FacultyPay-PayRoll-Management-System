@@ -12,7 +12,12 @@
           "package_name": "com.college.payroll"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1078975084440-pi5isfm1t6rtm0jo1n0spaf4qe0801oo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAIUWzJ-KvXzF3ZpvZgDJfgkCNrsqtYcPg"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1078975084440-pi5isfm1t6rtm0jo1n0spaf4qe0801oo.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1078975084440-3mnlmc3sfq52d91k1c8jn39i2nmk4n32.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fixedProject"
+              }
+            }
+          ]
         }
       }
     }
