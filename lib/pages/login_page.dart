@@ -42,14 +42,7 @@ class _LoginPageState extends State<LoginPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 6),
-              const Text(
-                "Authorized personnel only",
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
+
               const SizedBox(height: 20),
 
               // Email
@@ -106,28 +99,6 @@ class _LoginPageState extends State<LoginPage> {
 
                   child: const Text("Login"),
                 ),
-              ),
-
-              const SizedBox(height: 10),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    "Contact Admin",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  Text(
-                    "Forgot Password?",
-                    style: TextStyle(fontSize: 12, color: Color(0xff45a182)),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-              const Text(
-                "System v1.0 • Student Project",
-                style: TextStyle(fontSize: 10, color: Colors.grey),
               ),
             ],
           ),

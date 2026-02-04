@@ -10,6 +10,7 @@ import 'pages/admin/calculate_salary_screen.dart'; // Import this
 import 'pages/faculty/faculty_dashboard.dart';
 import 'pages/faculty/add_attendance_page.dart';
 import 'services/auth_gate.dart';
+import 'pages/faculty/faculty_salary_summary_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +40,7 @@ class MyApp extends StatelessWidget {
         '/admin/view-faculty': (context) => const ViewFacultyPage(),
         '/admin/view-attendance': (context) => const AdminViewAttendancePage(),
         '/admin/calculate-salary': (context) => const CalculateSalaryScreen(),
-
+        '/faculty/salary-history': (context) => const FacultySalaryHistoryPage(),
         '/faculty/dashboard': (context) => const FacultyDashboard(),
         '/faculty/add-attendance': (context) => const FacultyAddAttendancePage(),
       },

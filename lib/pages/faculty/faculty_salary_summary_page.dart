@@ -1,160 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import '../../widgets/app_sidebars.dart';
 
-class FacultySalarySummaryPage extends StatelessWidget {
-  const FacultySalarySummaryPage({super.key});
+class FacultySalaryHistoryPage extends StatelessWidget {
+  const FacultySalaryHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F7),
+      backgroundColor: const Color(0xfff6f7f7),
       body: Row(
         children: [
-          // Sidebar
-          Container(
-            width: 260,
-            color: Colors.white,
-            child: Column(
-              children: [
-                const SizedBox(height: 30),
-                const CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Color(0xFFE0F2EC),
-                  child: Icon(Icons.person, size: 30),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Dr. Jane Smith",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  "Visiting Professor",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 30),
+          // ✅ SIDEBAR (Active Route: Salary History)
+          const FacultySidebar(activeRoute: '/faculty/salary-history'),
 
-                _sideItem(Icons.dashboard, "Dashboard"),
-                _sideItem(Icons.person, "My Profile"),
-                _sideItem(Icons.payments, "Salary History", active: true),
-                _sideItem(Icons.support, "Support"),
-
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text(
-                    "Logout",
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-
-          // Main Content
+          // MAIN CONTENT
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            "Salary Summary",
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            "Academic Year 2023 - 2024",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.download),
-                        label: const Text("Download CSV"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF45A182),
-                        ),
-                      ),
-                    ],
-                  ),
+                  const Text("Salary History", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text("View your monthly earnings and payment status.", style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 32),
 
-                  const SizedBox(height: 30),
+                  // We need the Hourly Rate first
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
+                    builder: (context, userSnap) {
+                      if (!userSnap.hasData) return const LinearProgressIndicator();
 
-                  // Summary Cards
-                  Row(
-                    children: [
-                      _summaryCard(
-                        title: "Total Earned YTD",
-                        value: "\$8,750.00",
-                        footer: "75% of contract fulfilled",
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 20),
-                      _summaryCard(
-                        title: "Pending Payments",
-                        value: "\$400.00",
-                        footer: "Action Required: None",
-                        color: Colors.orange,
-                      ),
-                    ],
-                  ),
+                      final userData = userSnap.data!.data() as Map<String, dynamic>;
+                      // Handle double/int conversion safely
+                      final double hourlyRate = (userData['hourlyRate'] is int)
+                          ? (userData['hourlyRate'] as int).toDouble()
+                          : (userData['hourlyRate'] as double? ?? 0.0);
 
-                  const SizedBox(height: 30),
-
-                  // Monthly Breakdown
-                  const Text(
-                    "Monthly Breakdown",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  _salaryRow("October 2023", "12 hrs", "\$600.00", "Paid",
-                      Colors.green),
-                  _salaryRow("November 2023", "15 hrs", "\$750.00",
-                      "Processing", Colors.blue),
-                  _salaryRow("December 2023", "8 hrs", "\$400.00",
-                      "Pending", Colors.orange),
-                  _salaryRow("January 2024", "--", "\$0.00", "Future",
-                      Colors.grey),
-
-                  const SizedBox(height: 30),
-
-                  // Info Box
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF6F2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(Icons.info, color: Color(0xFF45A182)),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            "Payments for hourly work are processed on the 15th of the following month. "
-                                "If you notice any discrepancy, contact the department within 5 business days.",
-                            style: TextStyle(fontSize: 13),
-                          ),
-                        ),
-                      ],
-                    ),
+                      return _buildSalaryContent(user.uid, hourlyRate);
+                    },
                   ),
                 ],
               ),
@@ -165,96 +54,229 @@ class FacultySalarySummaryPage extends StatelessWidget {
     );
   }
 
-  // Sidebar Item
-  static Widget _sideItem(IconData icon, String title,
-      {bool active = false}) {
-    return ListTile(
-      leading: Icon(icon,
-          color: active ? const Color(0xFF45A182) : Colors.grey),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: active ? FontWeight.bold : FontWeight.normal,
-          color: active ? const Color(0xFF45A182) : Colors.black,
-        ),
-      ),
-    );
-  }
+  Widget _buildSalaryContent(String uid, double hourlyRate) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('attendance')
+          .where('uid', isEqualTo: uid)
+          .orderBy('date', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-  // Summary Card
-  static Widget _summaryCard({
-    required String title,
-    required String value,
-    required String footer,
-    required Color color,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _emptyState();
+        }
+
+        // --- DATA PROCESSING LOGIC ---
+        // Group documents by Month (e.g., "October 2023")
+        Map<String, List<QueryDocumentSnapshot>> groupedData = {};
+
+        for (var doc in snapshot.data!.docs) {
+          Timestamp ts = doc['date'];
+          String monthKey = DateFormat('MMMM yyyy').format(ts.toDate());
+
+          if (!groupedData.containsKey(monthKey)) {
+            groupedData[monthKey] = [];
+          }
+          groupedData[monthKey]!.add(doc);
+        }
+
+        // Calculate Totals for Summary Cards
+        double totalEarnedYTD = 0;
+        double pendingPayment = 0;
+
+        snapshot.data!.docs.forEach((doc) {
+          int lectures = doc['lectures'];
+          String status = doc['status'];
+          if (status == 'Paid') {
+            totalEarnedYTD += (lectures * hourlyRate);
+          } else if (status == 'Verified') {
+            pendingPayment += (lectures * hourlyRate);
+          }
+        });
+
+        return Column(
           children: [
-            Text(title, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+            // 1. SUMMARY CARDS
+            Row(
+              children: [
+                _SummaryCard(
+                  title: "TOTAL EARNED",
+                  value: "\₹${totalEarnedYTD.toStringAsFixed(2)}",
+                  icon: Icons.account_balance_wallet,
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 20),
+                _SummaryCard(
+                  title: "PENDING PAYMENT",
+                  value: "\₹${pendingPayment.toStringAsFixed(2)}",
+                  icon: Icons.hourglass_empty,
+                  color: Colors.orange,
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              footer,
-              style: TextStyle(fontSize: 12, color: color),
+
+            const SizedBox(height: 32),
+
+            // 2. MONTHLY BREAKDOWN LIST
+            const Align(
+                alignment: Alignment.centerLeft,
+                child: Text("Monthly Breakdown", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
             ),
+            const SizedBox(height: 16),
+
+            ...groupedData.entries.map((entry) {
+              return _MonthlyRow(
+                month: entry.key,
+                docs: entry.value,
+                hourlyRate: hourlyRate,
+              );
+            }).toList(),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
-  // Salary Row
-  static Widget _salaryRow(
-      String month,
-      String hours,
-      String amount,
-      String status,
-      Color statusColor,
-      ) {
+  Widget _emptyState() {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(32),
+      width: double.infinity,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      child: const Center(child: Text("No attendance records found yet.")),
+    );
+  }
+}
+
+// ================= COMPONENT: MONTHLY ROW =================
+class _MonthlyRow extends StatelessWidget {
+  final String month;
+  final List<QueryDocumentSnapshot> docs;
+  final double hourlyRate;
+
+  const _MonthlyRow({required this.month, required this.docs, required this.hourlyRate});
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate monthly totals
+    int totalLectures = 0;
+    double totalAmount = 0;
+
+    // Determine overall status for the month
+    bool hasPending = false;
+    bool hasVerified = false;
+    bool isAllPaid = true;
+
+    for (var doc in docs) {
+      int l = doc['lectures'] as int;
+      totalLectures += l;
+      totalAmount += (l * hourlyRate);
+
+      String status = doc['status'];
+      if (status == 'Pending') { hasPending = true; isAllPaid = false; }
+      if (status == 'Verified') { hasVerified = true; isAllPaid = false; }
+    }
+
+    // Badge Logic
+    String statusText = "Processing";
+    Color statusColor = Colors.blue;
+
+    if (isAllPaid) {
+      statusText = "Paid";
+      statusColor = Colors.green;
+    } else if (hasPending) {
+      statusText = "Pending Review";
+      statusColor = Colors.orange;
+    } else if (hasVerified) {
+      statusText = "Approved"; // Verified but not paid yet
+      statusColor = Colors.purple;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(month, style: const TextStyle(fontWeight: FontWeight.w600)),
-          Text(hours),
-          Text(amount, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.calendar_month, color: Colors.grey),
               ),
-            ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(month, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text("$totalLectures Lectures Recorded", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                ],
+              ),
+            ],
           ),
+
+          Row(
+            children: [
+              Text("\₹${totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(width: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          )
         ],
+      ),
+    );
+  }
+}
+
+// ================= COMPONENT: SUMMARY CARD =================
+class _SummaryCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _SummaryCard({required this.title, required this.value, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(icon, color: color)),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

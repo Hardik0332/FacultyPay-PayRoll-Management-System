@@ -154,7 +154,7 @@ class _SalaryRow extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Text(
-                    "\$${totalAmount.toStringAsFixed(2)}",
+                    "\₹${totalAmount.toStringAsFixed(2)}",
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)
                 ),
               ),

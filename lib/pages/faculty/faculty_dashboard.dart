@@ -109,7 +109,7 @@ class FacultyDashboard extends StatelessWidget {
                 children: [
                   _StatCard(
                     title: "Total Earnings",
-                    value: "\$${earnings.toStringAsFixed(2)}",
+                    value: "\₹${earnings.toStringAsFixed(2)}",
                     icon: Icons.attach_money,
                     color: const Color(0xff45a182),
                   ),
@@ -123,7 +123,7 @@ class FacultyDashboard extends StatelessWidget {
                   const SizedBox(width: 20),
                   _StatCard(
                     title: "Hourly Rate",
-                    value: "\$${rate.toStringAsFixed(0)}",
+                    value: "\₹${rate.toStringAsFixed(0)}",
                     icon: Icons.access_time,
                     color: Colors.orangeAccent,
                   ),

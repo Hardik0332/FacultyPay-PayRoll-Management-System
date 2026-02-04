@@ -150,7 +150,7 @@ class ViewFacultyPage extends StatelessWidget {
                                   Row(
                                     children: [
                                       Text(
-                                        "\$${rate.toStringAsFixed(2)} / hr",
+                                        "\₹ ${rate.toStringAsFixed(2)} / hr",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,

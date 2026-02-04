@@ -82,6 +82,12 @@ class FacultySidebar extends StatelessWidget {
             route: '/faculty/add-attendance',
             isActive: activeRoute == '/faculty/add-attendance',
           ),
+          _SidebarItem(
+            icon: Icons.payments,
+            title: "Salary History",
+            route: '/faculty/salary-history',
+            isActive: activeRoute == '/faculty/salary-history',
+          ),
           // Add more faculty pages here if needed
           const Spacer(),
           const Divider(),
