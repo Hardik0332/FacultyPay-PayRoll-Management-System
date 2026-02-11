@@ -18,26 +18,35 @@ class ReceiptService {
   }) async {
     final doc = pw.Document();
 
+    // 1. LOAD BOTH REGULAR AND BOLD FONTS
+    final ttfRegular = await PdfGoogleFonts.robotoRegular();
+    final ttfBold = await PdfGoogleFonts.robotoBold(); // ✅ Required for Bold Text
+
     doc.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
-          return buildReceiptLayout(
-              facultyName, department, month, totalLectures,
-              ratePerLecture, totalAmount, paymentDate, receiptId
+          // 2. APPLY BOTH FONTS TO THE THEME
+          return pw.Theme(
+            data: pw.ThemeData.withFont(
+              base: ttfRegular,
+              bold: ttfBold, // ✅ Tells PDF to use Roboto for bold text too
+            ),
+            child: buildReceiptLayout(
+                facultyName, department, month, totalLectures,
+                ratePerLecture, totalAmount, paymentDate, receiptId
+            ),
           );
         },
       ),
     );
 
-    // Open Print Dialog
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => doc.save(),
       name: 'Receipt_$receiptId.pdf',
     );
   }
 
-  /// PDF Layout Design
   static pw.Widget buildReceiptLayout(
       String name, String dept, String month, int lectures,
       double rate, double total, String date, String id) {
@@ -58,7 +67,7 @@ class ReceiptService {
         ),
         pw.SizedBox(height: 20),
 
-        // RECEIPT DETAILS
+        // DETAILS
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
@@ -86,7 +95,7 @@ class ReceiptService {
         pw.Table.fromTextArray(
           headers: ["Description", "Quantity", "Rate", "Total"],
           data: [
-            ["Teaching Services - $month", "$lectures Lectures", "\₹${rate.toStringAsFixed(2)}", "\₹${total.toStringAsFixed(2)}"],
+            ["Teaching Services - $month", "$lectures Lectures", "₹ ${rate.toStringAsFixed(2)}", "₹ ${total.toStringAsFixed(2)}"],
           ],
           border: null,
           headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
@@ -108,7 +117,8 @@ class ReceiptService {
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
               pw.Text("NET TOTAL: ", style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-              pw.Text("\₹${total.toStringAsFixed(2)}", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+              // ✅ This will now work because 'bold: ttfBold' is set
+              pw.Text("₹ ${total.toStringAsFixed(2)}", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
             ],
           ),
         ),
