@@ -11,6 +11,7 @@ import 'pages/faculty/faculty_dashboard.dart';
 import 'pages/faculty/add_attendance_page.dart';
 import 'services/auth_gate.dart';
 import 'pages/faculty/faculty_salary_summary_page.dart';
+import 'pages/admin/admin_reports_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
         '/faculty/salary-history': (context) => const FacultySalaryHistoryPage(),
         '/faculty/dashboard': (context) => const FacultyDashboard(),
         '/faculty/add-attendance': (context) => const FacultyAddAttendancePage(),
+        '/admin/reports': (context) => const AdminReportsPage(),
       },
     );
   }

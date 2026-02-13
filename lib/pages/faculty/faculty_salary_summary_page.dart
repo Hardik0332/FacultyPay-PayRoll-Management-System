@@ -3,7 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../widgets/app_sidebars.dart';
-import '../../services/receipt_service.dart'; // ✅ Make sure this import is here
+import '../../services/report_service.dart'; // For Full History Report
+import '../../services/receipt_service.dart';
+// ✅ FIXED: For Individual Receipts
 
 class FacultySalaryHistoryPage extends StatelessWidget {
   const FacultySalaryHistoryPage({super.key});
@@ -26,12 +28,52 @@ class FacultySalaryHistoryPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Salary History", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text("View your monthly earnings and payment status.", style: TextStyle(color: Colors.grey)),
+                  // ✅ HEADER ROW WITH PRINT BUTTON
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text("Salary History", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          Text("View monthly earnings and payment status.", style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                      // ✅ PRINT FULL HISTORY BUTTON
+                      IconButton(
+                        icon: const Icon(Icons.print, color: Color(0xff45a182), size: 28),
+                        tooltip: "Print Full Statement",
+                        onPressed: () async {
+                          if (user == null) return;
+
+                          // Fetch ALL history for this user
+                          final snapshot = await FirebaseFirestore.instance
+                              .collection('attendance')
+                              .where('uid', isEqualTo: user.uid)
+                              .orderBy('date', descending: true)
+                              .get();
+
+                          if (snapshot.docs.isNotEmpty) {
+                            ReportService.printHistoryReport(
+                              title: "Faculty Statement",
+                              subtitle: "Full History of Lectures and Payment Status",
+                              docs: snapshot.docs,
+                              isAdminReport: false,
+                            );
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No records to print")));
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+
                   const SizedBox(height: 32),
 
-                  // We need the Hourly Rate & Profile Info first
+                  // ✅ FETCH USER DATA (Rate, Name, Dept)
                   StreamBuilder<DocumentSnapshot>(
                     stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
                     builder: (context, userSnap) {
@@ -254,13 +296,14 @@ class _MonthlyRow extends StatelessWidget {
                 child: Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
 
-              // ✅ PRINT BUTTON (Only if Paid)
+              // ✅ INDIVIDUAL RECEIPT BUTTON (Only if Paid)
               if (isAllPaid) ...[
                 const SizedBox(width: 12),
                 IconButton(
-                  icon: const Icon(Icons.print, color: Colors.grey),
+                  icon: const Icon(Icons.download, color: Colors.grey),
                   tooltip: "Download Receipt",
                   onPressed: () {
+                    // Call the Receipt Service
                     ReceiptService.printReceipt(
                       facultyName: facultyName,
                       department: department,

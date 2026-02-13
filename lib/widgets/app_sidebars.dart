@@ -46,6 +46,12 @@ class AdminSidebar extends StatelessWidget {
             route: '/admin/calculate-salary',
             isActive: activeRoute == '/admin/calculate-salary',
           ),
+          _SidebarItem(
+            icon: Icons.print,
+            title: "Reports",
+            route: '/admin/reports',
+            isActive: activeRoute == '/admin/reports',
+          ),
           const Spacer(),
           const Divider(),
           _LogoutItem(),
