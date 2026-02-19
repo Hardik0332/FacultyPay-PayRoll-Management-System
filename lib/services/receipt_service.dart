@@ -60,7 +60,7 @@ class ReceiptService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text("College SMS", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.Text("FacultyPay", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
               pw.Text("OFFICIAL SALARY SLIP", style: pw.TextStyle(fontSize: 18, color: PdfColors.grey)),
             ],
           ),
@@ -116,8 +116,8 @@ class ReceiptService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              pw.Text("NET TOTAL: ", style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-              // ✅ This will now work because 'bold: ttfBold' is set
+              // ✅ EXPLICITLY LABELED AS AMOUNT PAID
+              pw.Text("TOTAL AMOUNT PAID: ", style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
               pw.Text("₹ ${total.toStringAsFixed(2)}", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
             ],
           ),

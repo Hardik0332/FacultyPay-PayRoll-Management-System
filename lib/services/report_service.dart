@@ -12,6 +12,7 @@ class ReportService {
     required List<QueryDocumentSnapshot> docs,
     required bool isAdminReport, // If true, we show "Faculty Name" column
     Map<String, String>? facultyNames, // Needed if isAdminReport is true
+    required double totalAmountPaid, // ✅ NEW: Total Amount Parameter
   }) async {
     final doc = pw.Document();
 
@@ -58,7 +59,7 @@ class ReportService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text("College SMS", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.Text("FacultyPay", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
                 pw.Text("HISTORY REPORT", style: pw.TextStyle(fontSize: 16, color: PdfColors.grey)),
               ],
             ),
@@ -94,9 +95,15 @@ class ReportService {
 
           pw.SizedBox(height: 20),
           pw.Divider(),
-          pw.Align(
-            alignment: pw.Alignment.centerRight,
-            child: pw.Text("Total Records: ${docs.length}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+
+          // ✅ FOOTER WITH TOTAL AMOUNT PAID
+          pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text("Total Records: ${docs.length}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                pw.Text("Total Amount Paid: ₹ ${totalAmountPaid.toStringAsFixed(2)}",
+                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+              ]
           ),
         ],
       ),

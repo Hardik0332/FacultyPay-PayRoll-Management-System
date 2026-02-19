@@ -10,12 +10,27 @@ class CalculateSalaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 800;
+    // ✅ 1. Grab theme for dynamic colors
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xfff6f7f7),
+      // ✅ 2. Background inherited from main.dart
+      appBar: isDesktop
+          ? null
+          : AppBar(
+        title: const Text("Calculate Salary"),
+        elevation: 0,
+      ),
+      drawer: isDesktop
+          ? null
+          : const Drawer(
+        child: AdminSidebar(activeRoute: '/admin/calculate-salary'),
+      ),
       body: Row(
         children: [
           // ✅ USE SHARED SIDEBAR
-          const AdminSidebar(activeRoute: '/admin/calculate-salary'),
+          if (isDesktop) const AdminSidebar(activeRoute: '/admin/calculate-salary'),
 
           // MAIN CONTENT
           Expanded(
@@ -23,30 +38,31 @@ class CalculateSalaryScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-                  color: Colors.white,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Salary Calculation', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 4),
-                          Text('Process payments for verified lectures', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ],
+                if (isDesktop)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    color: theme.cardColor, // ✅ Dynamic Header Background
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text('Salary Calculation', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Text('Process payments for verified lectures', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                if (isDesktop) const SizedBox(height: 20),
 
                 // FACULTY SALARY TABLE
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(32),
+                    padding: EdgeInsets.all(isDesktop ? 32 : 16),
                     child: StreamBuilder<QuerySnapshot>(
                       // 1. Get All Faculty Members
                       stream: FirebaseFirestore.instance
@@ -64,16 +80,16 @@ class CalculateSalaryScreen extends StatelessWidget {
 
                         return Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.cardColor, // ✅ Dynamic Table Background
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
                           ),
                           child: ListView.separated(
                             padding: const EdgeInsets.all(0),
                             itemCount: facultyDocs.length,
-                            separatorBuilder: (c, i) => const Divider(height: 1),
+                            separatorBuilder: (c, i) => Divider(height: 1, color: Colors.grey.withOpacity(0.2)), // ✅ Subtle divider
                             itemBuilder: (context, index) {
-                              return _SalaryRow(facultyDoc: facultyDocs[index]);
+                              return _SalaryRow(facultyDoc: facultyDocs[index], isDesktop: isDesktop);
                             },
                           ),
                         );
@@ -93,11 +109,13 @@ class CalculateSalaryScreen extends StatelessWidget {
 // ================= INDIVIDUAL ROW COMPONENT =================
 class _SalaryRow extends StatelessWidget {
   final QueryDocumentSnapshot facultyDoc;
+  final bool isDesktop;
 
-  const _SalaryRow({required this.facultyDoc});
+  const _SalaryRow({required this.facultyDoc, required this.isDesktop});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // ✅ Theme context
     final data = facultyDoc.data() as Map<String, dynamic>;
     final String uid = facultyDoc.id;
     final String name = data['name'] ?? 'Unknown';
@@ -131,92 +149,76 @@ class _SalaryRow extends StatelessWidget {
         double totalAmount = totalLectures * rate;
         bool isOwed = totalAmount > 0;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Row(
-            children: [
-              // Name & Dept
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(dept.toUpperCase(), style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-
-              // Lectures Count
-              Expanded(
-                flex: 2,
-                child: Text("$totalLectures Lectures", style: const TextStyle(fontWeight: FontWeight.w500)),
-              ),
-
-              // Total Amount
-              Expanded(
-                flex: 2,
-                child: Text(
-                    "\₹${totalAmount.toStringAsFixed(2)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)
-                ),
-              ),
-
-              // Status Badge
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isOwed ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isOwed ? "Pending" : "Paid Up",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: isOwed ? Colors.orange : Colors.green,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12
-                    ),
-                  ),
-                ),
-              ),
-
-              // Action Button
-              Expanded(
-                flex: 2,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: isOwed
-                      ? ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff45a182)),
-                    onPressed: () => _payFaculty(context, uid, docs),
-                    child: const Text("Pay Now"),
-                  )
-                      : OutlinedButton.icon(
-                    icon: const Icon(Icons.print, size: 16),
-                    label: const Text("Print"),
-                    onPressed: () {
-                      // CALL THE RECEIPT SERVICE
-                      ReceiptService.printReceipt(
-                        facultyName: name,
-                        department: dept,
-                        month: "Verified Lectures", // Or pass the specific month if available
-                        totalLectures: totalLectures,
-                        ratePerLecture: rate,
-                        totalAmount: totalAmount,
-                        paymentDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-                        receiptId: "REC-${DateTime.now().millisecondsSinceEpoch}",
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
+        Widget profileCol = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(dept.toUpperCase(), style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+          ],
         );
+
+        Widget detailsRow = Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("$totalLectures Lectures", style: const TextStyle(fontWeight: FontWeight.w500)),
+            // ✅ Removed hardcoded Colors.black87 so text appears white in Dark Mode
+            Text("₹${totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: isOwed ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+              child: Text(isOwed ? "Pending" : "Paid Up", textAlign: TextAlign.center, style: TextStyle(color: isOwed ? Colors.orange : Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+            ),
+          ],
+        );
+
+        Widget actionBtn = isOwed
+            ? ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff45a182)), onPressed: () => _payFaculty(context, uid, docs), child: const Text("Pay Now"))
+            : OutlinedButton.icon(icon: const Icon(Icons.print, size: 16), label: const Text("Print"), onPressed: () {
+          // ✅ Dynamically grabs the current month for a professional receipt label
+          String currentMonthLabel = DateFormat('MMMM yyyy').format(DateTime.now());
+
+          ReceiptService.printReceipt(
+            facultyName: name,
+            department: dept,
+            month: currentMonthLabel,
+            totalLectures: totalLectures,
+            ratePerLecture: rate,
+            totalAmount: totalAmount,
+            paymentDate: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+            receiptId: "REC-${DateTime.now().millisecondsSinceEpoch}",
+          );
+        });
+
+        if (isDesktop) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Row(
+              children: [
+                Expanded(flex: 3, child: profileCol),
+                Expanded(flex: 2, child: Text("$totalLectures Lectures", style: const TextStyle(fontWeight: FontWeight.w500))),
+                // ✅ Removed hardcoded Colors.black87
+                Expanded(flex: 2, child: Text("₹${totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                Expanded(flex: 2, child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: isOwed ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20)), child: Text(isOwed ? "Pending" : "Paid Up", textAlign: TextAlign.center, style: TextStyle(color: isOwed ? Colors.orange : Colors.green, fontWeight: FontWeight.bold, fontSize: 12)))),
+                Expanded(flex: 2, child: Align(alignment: Alignment.centerRight, child: actionBtn)),
+              ],
+            ),
+          );
+        } else {
+          // Mobile View Stack
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                profileCol,
+                const SizedBox(height: 16),
+                detailsRow,
+                const SizedBox(height: 16),
+                Align(alignment: Alignment.centerRight, child: actionBtn),
+              ],
+            ),
+          );
+        }
       },
     );
   }
@@ -226,6 +228,7 @@ class _SalaryRow extends StatelessWidget {
     bool confirm = await showDialog(
         context: context,
         builder: (c) => AlertDialog(
+          backgroundColor: Theme.of(context).cardColor, // ✅ Match popup to theme
           title: const Text("Confirm Payment"),
           content: Text("Mark ${docs.length} attendance records as PAID?"),
           actions: [

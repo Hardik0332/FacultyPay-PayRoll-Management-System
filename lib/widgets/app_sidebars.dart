@@ -1,192 +1,175 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../main.dart'; // To access the Dark Mode toggle
 
-// ================= ADMIN SIDEBAR =================
 class AdminSidebar extends StatelessWidget {
   final String activeRoute;
-
   const AdminSidebar({super.key, required this.activeRoute});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       width: 260,
-      color: Colors.white,
+      color: theme.cardColor,
       child: Column(
         children: [
-          _buildHeader("College SMS", "ADMIN PANEL"),
-          const Divider(),
-          _SidebarItem(
-            icon: Icons.dashboard,
-            title: "Dashboard",
-            route: '/admin/dashboard',
-            isActive: activeRoute == '/admin/dashboard',
+          const SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.school, size: 32, color: theme.primaryColor),
+              const SizedBox(width: 12),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("FacultyPay", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text("ADMIN PANEL", style: TextStyle(fontSize: 10, letterSpacing: 1.5, color: Colors.grey)),
+                ],
+              )
+            ],
           ),
-          _SidebarItem(
-            icon: Icons.person_add,
-            title: "Add Faculty",
-            route: '/admin/add-faculty',
-            isActive: activeRoute == '/admin/add-faculty',
-          ),
-          _SidebarItem(
-            icon: Icons.groups,
-            title: "View Faculty",
-            route: '/admin/view-faculty',
-            isActive: activeRoute == '/admin/view-faculty',
-          ),
-          _SidebarItem(
-            icon: Icons.checklist,
-            title: "View Attendance",
-            route: '/admin/view-attendance',
-            isActive: activeRoute == '/admin/view-attendance',
-          ),
-          _SidebarItem(
-            icon: Icons.calculate,
-            title: "Calculate Salary",
-            route: '/admin/calculate-salary',
-            isActive: activeRoute == '/admin/calculate-salary',
-          ),
-          _SidebarItem(
-            icon: Icons.print,
-            title: "Reports",
-            route: '/admin/reports',
-            isActive: activeRoute == '/admin/reports',
-          ),
+          const SizedBox(height: 40),
+
+          _buildNavItem(context, Icons.dashboard, "Dashboard", '/admin/dashboard'),
+          _buildNavItem(context, Icons.person_add, "Add Faculty", '/admin/add-faculty'),
+          _buildNavItem(context, Icons.people, "View Faculty", '/admin/view-faculty'),
+          _buildNavItem(context, Icons.checklist, "View Attendance", '/admin/view-attendance'),
+          _buildNavItem(context, Icons.calculate, "Calculate Salary", '/admin/calculate-salary'),
+          _buildNavItem(context, Icons.print, "Reports", '/admin/reports'),
+
           const Spacer(),
+
+          // Dark Mode Toggle
+          ValueListenableBuilder<ThemeMode>(
+              valueListenable: themeNotifier,
+              builder: (context, currentMode, child) {
+                final isDark = currentMode == ThemeMode.dark;
+                return ListTile(
+                  leading: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: Colors.grey.shade600),
+                  title: Text(isDark ? "Light Mode" : "Dark Mode", style: const TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    themeNotifier.value = isDark ? ThemeMode.light : ThemeMode.dark;
+                  },
+                );
+              }
+          ),
+
           const Divider(),
-          _LogoutItem(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text("Logout", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) Navigator.pushReplacementNamed(context, '/');
+            },
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
-}
 
-// ================= FACULTY SIDEBAR =================
-class FacultySidebar extends StatelessWidget {
-  final String activeRoute;
+  Widget _buildNavItem(BuildContext context, IconData icon, String title, String route) {
+    bool isActive = activeRoute == route;
+    final theme = Theme.of(context);
 
-  const FacultySidebar({super.key, required this.activeRoute});
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      width: 260,
-      color: Colors.white,
-      child: Column(
-        children: [
-          _buildHeader("Faculty Portal", "TEACHER PANEL"),
-          const Divider(),
-          _SidebarItem(
-            icon: Icons.dashboard,
-            title: "Dashboard",
-            route: '/faculty/dashboard',
-            isActive: activeRoute == '/faculty/dashboard',
-          ),
-          _SidebarItem(
-            icon: Icons.calendar_today,
-            title: "Add Attendance",
-            route: '/faculty/add-attendance',
-            isActive: activeRoute == '/faculty/add-attendance',
-          ),
-          _SidebarItem(
-            icon: Icons.payments,
-            title: "Salary History",
-            route: '/faculty/salary-history',
-            isActive: activeRoute == '/faculty/salary-history',
-          ),
-          // Add more faculty pages here if needed
-          const Spacer(),
-          const Divider(),
-          _LogoutItem(),
-        ],
-      ),
-    );
-  }
-}
-
-// ================= HELPER WIDGETS =================
-
-Widget _buildHeader(String title, String subtitle) {
-  return Padding(
-    padding: const EdgeInsets.all(24),
-    child: Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xffe6f4ea),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.school, color: Color(0xff45a182), size: 24),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text(subtitle, style: const TextStyle(fontSize: 10, color: Colors.grey, letterSpacing: 1.0)),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-class _SidebarItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String route;
-  final bool isActive;
-
-  const _SidebarItem({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.route,
-    required this.isActive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xff45a182).withOpacity(0.1) : Colors.transparent,
+        color: isActive ? theme.primaryColor.withOpacity(0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: Icon(
-          icon,
-          color: isActive ? const Color(0xff45a182) : Colors.grey[600],
-          size: 22,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isActive ? const Color(0xff45a182) : Colors.grey[800],
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
-          ),
-        ),
+        leading: Icon(icon, color: isActive ? theme.primaryColor : Colors.grey.shade600),
+        title: Text(title, style: TextStyle(color: isActive ? theme.primaryColor : Colors.grey.shade600, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
         onTap: () {
-          if (!isActive) Navigator.pushReplacementNamed(context, route);
+          // If we aren't already on this page, jump to it instantly without animations
+          if (!isActive) {
+            Navigator.pushReplacementNamed(context, route);
+          }
         },
       ),
     );
   }
 }
 
-class _LogoutItem extends StatelessWidget {
+class FacultySidebar extends StatelessWidget {
+  final String activeRoute;
+  const FacultySidebar({super.key, required this.activeRoute});
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
+    final theme = Theme.of(context);
+    return Container(
+      width: 260,
+      color: theme.cardColor,
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.school, size: 32, color: theme.primaryColor),
+              const SizedBox(width: 12),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("FacultyPay", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text("TEACHER PANEL", style: TextStyle(fontSize: 10, letterSpacing: 1.5, color: Colors.grey)),
+                ],
+              )
+            ],
+          ),
+          const SizedBox(height: 40),
+
+          _buildNavItem(context, Icons.dashboard, "Dashboard", '/faculty/dashboard'),
+          _buildNavItem(context, Icons.calendar_today, "Add Attendance", '/faculty/add-attendance'),
+          _buildNavItem(context, Icons.account_balance_wallet, "Salary History", '/faculty/salary-history'),
+
+          const Spacer(),
+          ValueListenableBuilder<ThemeMode>(
+              valueListenable: themeNotifier,
+              builder: (context, currentMode, child) {
+                final isDark = currentMode == ThemeMode.dark;
+                return ListTile(
+                  leading: Icon(isDark ? Icons.light_mode : Icons.dark_mode, color: Colors.grey.shade600),
+                  title: Text(isDark ? "Light Mode" : "Dark Mode", style: const TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () => themeNotifier.value = isDark ? ThemeMode.light : ThemeMode.dark,
+                );
+              }
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text("Logout", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              if (context.mounted) Navigator.pushReplacementNamed(context, '/');
+            },
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(BuildContext context, IconData icon, String title, String route) {
+    bool isActive = activeRoute == route;
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: isActive ? theme.primaryColor.withOpacity(0.1) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: ListTile(
-        leading: const Icon(Icons.logout, color: Colors.red),
-        title: const Text("Logout", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        onTap: () async {
-          await FirebaseAuth.instance.signOut();
-          if (context.mounted) Navigator.pushReplacementNamed(context, '/');
+        leading: Icon(icon, color: isActive ? theme.primaryColor : Colors.grey.shade600),
+        title: Text(title, style: TextStyle(color: isActive ? theme.primaryColor : Colors.grey.shade600, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+        onTap: () {
+          if (!isActive) Navigator.pushReplacementNamed(context, route);
         },
       ),
     );

@@ -3,9 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../widgets/app_sidebars.dart';
-import '../../services/report_service.dart'; // For Full History Report
+import '../../services/report_service.dart';
 import '../../services/receipt_service.dart';
-// ✅ FIXED: For Individual Receipts
 
 class FacultySalaryHistoryPage extends StatelessWidget {
   const FacultySalaryHistoryPage({super.key});
@@ -13,13 +12,23 @@ class FacultySalaryHistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    // ✅ 1. Grab theme context
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xfff6f7f7),
+      // ✅ 2. Scaffold background automatically inherited
+      appBar: MediaQuery.of(context).size.width > 800
+          ? null
+          : AppBar(title: const Text("Salary History"), elevation: 0),
+      drawer: MediaQuery.of(context).size.width > 800
+          ? null
+          : const Drawer(child: FacultySidebar(activeRoute: '/faculty/salary-history')),
+
       body: Row(
         children: [
-          // ✅ SIDEBAR (Active Route: Salary History)
-          const FacultySidebar(activeRoute: '/faculty/salary-history'),
+          // SIDEBAR (Active Route: Salary History)
+          if (MediaQuery.of(context).size.width > 800)
+            const FacultySidebar(activeRoute: '/faculty/salary-history'),
 
           // MAIN CONTENT
           Expanded(
@@ -28,26 +37,34 @@ class FacultySalaryHistoryPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ✅ HEADER ROW WITH PRINT BUTTON
+                  // HEADER ROW WITH PRINT BUTTON
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text("Salary History", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 8),
-                          Text("View monthly earnings and payment status.", style: TextStyle(color: Colors.grey)),
+                        children: [
+                          const Text("Salary History", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Text("View monthly earnings and payment status.", style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6))),
                         ],
                       ),
-                      // ✅ PRINT FULL HISTORY BUTTON
+                      // PRINT FULL HISTORY BUTTON
                       IconButton(
                         icon: const Icon(Icons.print, color: Color(0xff45a182), size: 28),
                         tooltip: "Print Full Statement",
                         onPressed: () async {
                           if (user == null) return;
 
-                          // Fetch ALL history for this user
+                          final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+                          double hourlyRate = 0.0;
+                          if (userDoc.exists) {
+                            var data = userDoc.data()!;
+                            hourlyRate = (data['hourlyRate'] is int)
+                                ? (data['hourlyRate'] as int).toDouble()
+                                : (data['hourlyRate'] as double? ?? 0.0);
+                          }
+
                           final snapshot = await FirebaseFirestore.instance
                               .collection('attendance')
                               .where('uid', isEqualTo: user.uid)
@@ -55,11 +72,20 @@ class FacultySalaryHistoryPage extends StatelessWidget {
                               .get();
 
                           if (snapshot.docs.isNotEmpty) {
+
+                            double totalPaid = 0.0;
+                            for (var doc in snapshot.docs) {
+                              if (doc['status'] == 'Paid') {
+                                totalPaid += (doc['lectures'] as int) * hourlyRate;
+                              }
+                            }
+
                             ReportService.printHistoryReport(
                               title: "Faculty Statement",
                               subtitle: "Full History of Lectures and Payment Status",
                               docs: snapshot.docs,
                               isAdminReport: false,
+                              totalAmountPaid: totalPaid,
                             );
                           } else {
                             if (context.mounted) {
@@ -73,7 +99,7 @@ class FacultySalaryHistoryPage extends StatelessWidget {
 
                   const SizedBox(height: 32),
 
-                  // ✅ FETCH USER DATA (Rate, Name, Dept)
+                  // FETCH USER DATA (Rate, Name, Dept)
                   StreamBuilder<DocumentSnapshot>(
                     stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
                     builder: (context, userSnap) {
@@ -81,7 +107,6 @@ class FacultySalaryHistoryPage extends StatelessWidget {
 
                       final userData = userSnap.data!.data() as Map<String, dynamic>;
 
-                      // Handle data types safely
                       final double hourlyRate = (userData['hourlyRate'] is int)
                           ? (userData['hourlyRate'] as int).toDouble()
                           : (userData['hourlyRate'] as double? ?? 0.0);
@@ -89,7 +114,7 @@ class FacultySalaryHistoryPage extends StatelessWidget {
                       final String name = userData['name'] ?? 'Faculty Member';
                       final String dept = userData['department'] ?? 'General';
 
-                      return _buildSalaryContent(user.uid, hourlyRate, name, dept);
+                      return _buildSalaryContent(context, user.uid, hourlyRate, name, dept); // ✅ Pass context
                     },
                   ),
                 ],
@@ -101,7 +126,7 @@ class FacultySalaryHistoryPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSalaryContent(String uid, double hourlyRate, String name, String dept) {
+  Widget _buildSalaryContent(BuildContext context, String uid, double hourlyRate, String name, String dept) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('attendance')
@@ -114,11 +139,9 @@ class FacultySalaryHistoryPage extends StatelessWidget {
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _emptyState();
+          return _emptyState(context);
         }
 
-        // --- DATA PROCESSING LOGIC ---
-        // Group documents by Month (e.g., "October 2023")
         Map<String, List<QueryDocumentSnapshot>> groupedData = {};
 
         for (var doc in snapshot.data!.docs) {
@@ -131,7 +154,6 @@ class FacultySalaryHistoryPage extends StatelessWidget {
           groupedData[monthKey]!.add(doc);
         }
 
-        // Calculate Totals for Summary Cards
         double totalEarnedYTD = 0;
         double pendingPayment = 0;
 
@@ -151,7 +173,7 @@ class FacultySalaryHistoryPage extends StatelessWidget {
             Row(
               children: [
                 _SummaryCard(
-                  title: "TOTAL EARNED",
+                  title: "TOTAL EARNED", // ✅ REVERTED TO "TOTAL EARNED"
                   value: "\₹${totalEarnedYTD.toStringAsFixed(2)}",
                   icon: Icons.account_balance_wallet,
                   color: Colors.green,
@@ -180,8 +202,8 @@ class FacultySalaryHistoryPage extends StatelessWidget {
                 month: entry.key,
                 docs: entry.value,
                 hourlyRate: hourlyRate,
-                facultyName: name, // ✅ Pass Name
-                department: dept,  // ✅ Pass Dept
+                facultyName: name,
+                department: dept,
               );
             }).toList(),
           ],
@@ -190,11 +212,12 @@ class FacultySalaryHistoryPage extends StatelessWidget {
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(32),
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(12)), // ✅ Dynamic
       child: const Center(child: Text("No attendance records found yet.")),
     );
   }
@@ -218,11 +241,11 @@ class _MonthlyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate monthly totals
+    final theme = Theme.of(context); // ✅ Theme access
+
     int totalLectures = 0;
     double totalAmount = 0;
 
-    // Determine overall status for the month
     bool hasPending = false;
     bool hasVerified = false;
     bool isAllPaid = true;
@@ -237,7 +260,6 @@ class _MonthlyRow extends StatelessWidget {
       if (status == 'Verified') { hasVerified = true; isAllPaid = false; }
     }
 
-    // Badge Logic
     String statusText = "Processing";
     Color statusColor = Colors.blue;
 
@@ -248,7 +270,7 @@ class _MonthlyRow extends StatelessWidget {
       statusText = "Pending Review";
       statusColor = Colors.orange;
     } else if (hasVerified) {
-      statusText = "Approved"; // Verified but not paid yet
+      statusText = "Approved";
       statusColor = Colors.purple;
     }
 
@@ -256,7 +278,7 @@ class _MonthlyRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor, // ✅ Dynamic Card Color
         borderRadius: BorderRadius.circular(12),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
       ),
@@ -268,7 +290,10 @@ class _MonthlyRow extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                    color: theme.brightness == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade100, // ✅ Dynamic icon bg
+                    borderRadius: BorderRadius.circular(8)
+                ),
                 child: const Icon(Icons.calendar_month, color: Colors.grey),
               ),
               const SizedBox(width: 16),
@@ -285,6 +310,7 @@ class _MonthlyRow extends StatelessWidget {
           // RIGHT SIDE: Amount, Status & Print Button
           Row(
             children: [
+              // ✅ Removed hardcoded Colors.black87
               Text("\₹${totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(width: 24),
               Container(
@@ -296,14 +322,13 @@ class _MonthlyRow extends StatelessWidget {
                 child: Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
 
-              // ✅ INDIVIDUAL RECEIPT BUTTON (Only if Paid)
+              // INDIVIDUAL RECEIPT BUTTON
               if (isAllPaid) ...[
                 const SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.download, color: Colors.grey),
                   tooltip: "Download Receipt",
                   onPressed: () {
-                    // Call the Receipt Service
                     ReceiptService.printReceipt(
                       facultyName: facultyName,
                       department: department,
@@ -325,7 +350,6 @@ class _MonthlyRow extends StatelessWidget {
   }
 }
 
-// ================= COMPONENT: SUMMARY CARD =================
 class _SummaryCard extends StatelessWidget {
   final String title;
   final String value;
@@ -336,11 +360,13 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // ✅ Theme access
+
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor, // ✅ Dynamic Card Color
           borderRadius: BorderRadius.circular(12),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
         ),
@@ -353,6 +379,7 @@ class _SummaryCard extends StatelessWidget {
               children: [
                 Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
+                // ✅ Removed hardcoded Colors.black87
                 Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               ],
             ),

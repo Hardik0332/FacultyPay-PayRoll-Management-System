@@ -1,295 +1,388 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../widgets/app_sidebars.dart'; // ✅ Shared Sidebar
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import '../../widgets/app_sidebars.dart';
 
 class FacultyAddAttendancePage extends StatefulWidget {
   const FacultyAddAttendancePage({super.key});
 
   @override
-  State<FacultyAddAttendancePage> createState() =>
-      _FacultyAddAttendancePageState();
+  State<FacultyAddAttendancePage> createState() => _FacultyAddAttendancePageState();
 }
 
 class _FacultyAddAttendancePageState extends State<FacultyAddAttendancePage> {
   DateTime? selectedDate;
   bool isLoading = false;
 
-  // ✅ DATA LISTS (You can change these easily)
-  final List<String> classOptions = ['BSC.CS', 'BSC.IT', 'BCA', 'M.Sc CS', 'B.Tech'];
-  final List<String> subjectOptions = [
-    'Java Programming',
-    'Data Structures',
-    'Python',
-    'Web Development',
-    'Database (DBMS)',
-    'Networking',
-    'Mathematics'
+  // Track lectures and custom fields
+  List<Map<String, dynamic>> lectures = [
+    {'class': null, 'subject': null, 'customClass': null, 'customSubject': null}
   ];
 
-  // ✅ DYNAMIC LIST OF LECTURES
-  // We start with one empty lecture
-  List<Map<String, String?>> lectureEntries = [
-    {'class': null, 'subject': null}
-  ];
+  // The Master List
+  final Map<String, List<String>> courseCurriculum = {
+    'BSC.CS': ['Java Programming', 'Data Structures', 'Python', 'Web Development', 'Operating Systems'],
+    'BCA': ['C Programming', 'Database (DBMS)', 'Networking', 'Mathematics', 'Software Engineering'],
+    'B.Sc IT': ['Cyber Security', 'Cloud Computing', 'IoT', 'Web Technologies'],
+    'B.Com': ['Accounting', 'Economics', 'Business Law', 'Taxation'],
+    'B.A': ['History', 'Political Science', 'English Literature', 'Sociology'],
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    selectedDate = DateTime.now();
+  }
 
   Future<void> _pickDate() async {
-    final date = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
       context: context,
+      initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2023),
       lastDate: DateTime.now(),
-      initialDate: DateTime.now(),
     );
-
-    if (date != null) {
-      setState(() => selectedDate = date);
-    }
-  }
-
-  void _addLectureRow() {
-    setState(() {
-      lectureEntries.add({'class': null, 'subject': null});
-    });
-  }
-
-  void _removeLectureRow(int index) {
-    if (lectureEntries.length > 1) {
-      setState(() {
-        lectureEntries.removeAt(index);
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("You must add at least one lecture.")),
-      );
+    if (picked != null && picked != selectedDate) {
+      setState(() => selectedDate = picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 800;
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xfff6f7f7),
+      appBar: isDesktop
+          ? null
+          : AppBar(
+        title: const Text("Add Attendance"),
+        elevation: 0,
+      ),
+      drawer: isDesktop
+          ? null
+          : const Drawer(
+        child: FacultySidebar(activeRoute: '/faculty/add-attendance'),
+      ),
       body: Row(
         children: [
-          const FacultySidebar(activeRoute: '/faculty/add-attendance'),
+          if (isDesktop) const FacultySidebar(activeRoute: '/faculty/add-attendance'),
 
-          // MAIN CONTENT
           Expanded(
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-                  ),
-                  child: Row(
-                    children: const [
-                      Text("Add Attendance", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                      Spacer(),
-                      CircleAvatar(radius: 18, backgroundColor: Color(0xffe6f4ea), child: Icon(Icons.person, size: 20, color: Color(0xff45a182))),
-                    ],
-                  ),
-                ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(isDesktop ? 40 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Record Daily Attendance", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text("Select your class and subject for each lecture conducted.", style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 32),
 
-                // Scrollable Body
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
+                  // --- FORM CONTAINER ---
+                  Container(
+                    padding: EdgeInsets.all(isDesktop ? 32 : 20),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _pageHeader(),
-                        const SizedBox(height: 30),
+                        const Text("Date of Lectures *", style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: _pickDate,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.withOpacity(0.4)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_month, color: Colors.grey),
+                                const SizedBox(width: 12),
+                                Text(
+                                  selectedDate == null ? "Select Date" : DateFormat('EEEE, MMM dd, yyyy').format(selectedDate!),
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        const Text("Lecture Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 16),
 
-                        // ✅ NEW DYNAMIC FORM
-                        _buildDynamicForm(),
+                        ...lectures.asMap().entries.map((entry) {
+                          int index = entry.key;
+                          Map<String, dynamic> lecture = entry.value;
 
-                        const SizedBox(height: 40),
-                        _recentEntries(),
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 24),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.only(top: 12, right: 16),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), shape: BoxShape.circle),
+                                  child: Text("${index + 1}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                ),
+                                Expanded(child: _buildLectureFields(index, lecture, theme, isDesktop)),
+                                if (lectures.length > 1)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4, left: 8),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                      onPressed: () => setState(() => lectures.removeAt(index)),
+                                    ),
+                                  )
+                              ],
+                            ),
+                          );
+                        }).toList(),
+
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                          onPressed: () => setState(() => lectures.add({'class': null, 'subject': null, 'customClass': null, 'customSubject': null})),
+                          icon: const Icon(Icons.add_circle_outline, color: Color(0xff45a182)),
+                          label: const Text("Add Another Lecture", style: TextStyle(color: Color(0xff45a182), fontWeight: FontWeight.bold)),
+                        ),
+
+                        const SizedBox(height: 32),
+                        const Divider(),
+                        const SizedBox(height: 16),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff45a182),
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            ),
+                            icon: isLoading ? const SizedBox() : const Icon(Icons.check_circle),
+                            label: Text(isLoading ? "Submitting..." : "Submit Attendance", style: const TextStyle(fontSize: 16, color: Colors.white)),
+                            onPressed: isLoading ? null : _submitAllAttendance,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _pageHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text("Record Daily Attendance", style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-        SizedBox(height: 8),
-        Text("Select your class and subject for each lecture conducted today.", style: TextStyle(color: Colors.grey)),
-      ],
-    );
-  }
+                  const SizedBox(height: 40),
 
-  Widget _buildDynamicForm() {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. DATE PICKER (Common for all)
-          const Text("Date of Lectures *", style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: _pickDate,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 20, color: Colors.grey),
-                  const SizedBox(width: 12),
-                  Text(
-                    selectedDate == null
-                        ? "Select Date"
-                        : DateFormat("dd MMM yyyy").format(selectedDate!),
-                    style: TextStyle(color: selectedDate == null ? Colors.grey : Colors.black),
-                  ),
+                  // ✅ RESTORED RECENT SUBMISSIONS SECTION
+                  const Text("Recent Submissions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  _buildRecentSubmissions(theme),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
-
-          const Divider(),
-          const SizedBox(height: 16),
-
-          // 2. DYNAMIC LIST OF LECTURES
-          const Text("Lecture Details", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 12),
-
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: lectureEntries.length,
-            separatorBuilder: (c, i) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              return _buildLectureRow(index);
-            },
-          ),
-
-          const SizedBox(height: 24),
-
-          // 3. ACTION BUTTONS (Add Row & Submit)
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: _addLectureRow,
-                icon: const Icon(Icons.add_circle_outline),
-                label: const Text("Add Another Lecture"),
-                style: TextButton.styleFrom(foregroundColor: const Color(0xff45a182)),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff45a182),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                icon: isLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Icon(Icons.send, size: 20),
-                label: const Text("Submit All", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                onPressed: isLoading ? null : _submitAllAttendance,
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 
-  // Individual Row for Class & Subject
-  Widget _buildLectureRow(int index) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xfff8f9fa),
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+  // --- UI HELPERS ---
+
+  Widget _buildLectureFields(int index, Map<String, dynamic> lecture, ThemeData theme, bool isDesktop) {
+    List<String> availableSubjects = (lecture['class'] != null && lecture['class'] != 'Other')
+        ? courseCurriculum[lecture['class']] ?? []
+        : [];
+
+    List<String> classOptions = [...courseCurriculum.keys, 'Other'];
+    List<String> subjectOptions = lecture['class'] != null ? [...availableSubjects, 'Other'] : [];
+
+    Widget classDropdown = DropdownButtonFormField<String>(
+      value: lecture['class'],
+      dropdownColor: theme.cardColor,
+      decoration: const InputDecoration(labelText: "Class", border: OutlineInputBorder()),
+      items: classOptions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+      onChanged: (val) {
+        setState(() {
+          lecture['class'] = val;
+          lecture['subject'] = null;
+          if (val != 'Other') lecture['customClass'] = null;
+        });
+      },
+    );
+
+    Widget subjectDropdown = DropdownButtonFormField<String>(
+      value: lecture['subject'],
+      dropdownColor: theme.cardColor,
+      decoration: const InputDecoration(labelText: "Subject", border: OutlineInputBorder()),
+      disabledHint: const Text("Select Class first"),
+      items: subjectOptions.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
+      onChanged: lecture['class'] == null ? null : (val) {
+        setState(() {
+          lecture['subject'] = val;
+          if (val != 'Other') lecture['customSubject'] = null;
+        });
+      },
+    );
+
+    Widget customClassField = lecture['class'] == 'Other' ? Padding(
+      padding: EdgeInsets.only(top: isDesktop ? 16 : 0, bottom: isDesktop ? 0 : 16),
+      child: TextFormField(
+        initialValue: lecture['customClass'],
+        decoration: const InputDecoration(labelText: "Enter Custom Class Name", border: OutlineInputBorder()),
+        onChanged: (val) => lecture['customClass'] = val,
       ),
-      child: Row(
+    ) : const SizedBox.shrink();
+
+    Widget customSubjectField = lecture['subject'] == 'Other' ? Padding(
+      padding: EdgeInsets.only(top: isDesktop ? 16 : 0),
+      child: TextFormField(
+        initialValue: lecture['customSubject'],
+        decoration: const InputDecoration(labelText: "Enter Custom Subject Name", border: OutlineInputBorder()),
+        onChanged: (val) => lecture['customSubject'] = val,
+      ),
+    ) : const SizedBox.shrink();
+
+    if (isDesktop) {
+      return Column(
         children: [
-          // Lecture Number
-          CircleAvatar(
-            radius: 12,
-            backgroundColor: Colors.grey.shade400,
-            child: Text("${index + 1}", style: const TextStyle(fontSize: 12, color: Colors.white)),
-          ),
-          const SizedBox(width: 16),
-
-          // Class Dropdown
-          Expanded(
-            flex: 2,
-            child: DropdownButtonFormField<String>(
-              value: lectureEntries[index]['class'],
-              decoration: const InputDecoration(
-                labelText: "Class",
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                isDense: true,
-              ),
-              items: classOptions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (val) => setState(() => lectureEntries[index]['class'] = val),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Subject Dropdown
-          Expanded(
-            flex: 3,
-            child: DropdownButtonFormField<String>(
-              value: lectureEntries[index]['subject'],
-              decoration: const InputDecoration(
-                labelText: "Subject",
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                isDense: true,
-              ),
-              items: subjectOptions.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-              onChanged: (val) => setState(() => lectureEntries[index]['subject'] = val),
-            ),
-          ),
-
-          // Delete Button (Only if more than 1 row)
-          if (lectureEntries.length > 1)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => _removeLectureRow(index),
+          Row(children: [Expanded(child: classDropdown), const SizedBox(width: 16), Expanded(child: subjectDropdown)]),
+          if (lecture['class'] == 'Other' || lecture['subject'] == 'Other')
+            Row(
+              children: [
+                Expanded(child: customClassField),
+                if (lecture['class'] == 'Other' && lecture['subject'] == 'Other') const SizedBox(width: 16),
+                Expanded(child: customSubjectField),
+              ],
             ),
         ],
-      ),
+      );
+    } else {
+      return Column(
+        children: [
+          classDropdown,
+          const SizedBox(height: 16),
+          if (lecture['class'] == 'Other') customClassField,
+          subjectDropdown,
+          if (lecture['subject'] == 'Other') const SizedBox(height: 16),
+          if (lecture['subject'] == 'Other') customSubjectField,
+        ],
+      );
+    }
+  }
+
+  // ✅ RECENT SUBMISSIONS WIDGET
+  Widget _buildRecentSubmissions(ThemeData theme) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('attendance')
+          .where('uid', isEqualTo: user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Text("Error loading history", style: TextStyle(color: theme.textTheme.bodyLarge?.color));
+        }
+
+        final docs = snapshot.data?.docs.toList() ?? [];
+        if (docs.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(12)),
+            child: const Text("No recent submissions.", style: TextStyle(color: Colors.grey)),
+          );
+        }
+
+        // Sort locally by 'submittedAt' to ensure the newest is on top
+        docs.sort((a, b) {
+          final aData = a.data() as Map<String, dynamic>;
+          final bData = b.data() as Map<String, dynamic>;
+          Timestamp? aTime = aData['submittedAt'] as Timestamp?;
+          Timestamp? bTime = bData['submittedAt'] as Timestamp?;
+          if (aTime == null || bTime == null) return 0;
+          return bTime.compareTo(aTime);
+        });
+
+        // Show only the top 5 most recent
+        final recentDocs = docs.take(5).toList();
+
+        return Column(
+          children: recentDocs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final dateVal = data['date'] as Timestamp?;
+            final date = dateVal?.toDate() ?? DateTime.now();
+            final subject = data['subject'] ?? 'Unknown';
+            final lectures = data['lectures'] ?? 0;
+            final status = data['status'] ?? 'Pending';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(DateFormat('MMM dd, yyyy').format(date), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      const SizedBox(height: 6),
+                      Text("$lectures Lecture(s) • $subject", style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: status == 'Verified' ? Colors.green.withOpacity(0.1) : (status == 'Paid' ? Colors.blue.withOpacity(0.1) : Colors.orange.withOpacity(0.1)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      status,
+                      style: TextStyle(
+                          color: status == 'Verified' ? Colors.green : (status == 'Paid' ? Colors.blue : Colors.orange),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
+
+  // --- LOGIC ---
 
   Future<void> _submitAllAttendance() async {
-    // Validation
     if (selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a date")));
       return;
     }
 
-    for (var entry in lectureEntries) {
-      if (entry['class'] == null || entry['subject'] == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select Class and Subject for all lectures")));
+    for (var l in lectures) {
+      if (l['class'] == null || l['subject'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please complete all dropdowns")));
+        return;
+      }
+      if (l['class'] == 'Other' && (l['customClass'] == null || l['customClass'].toString().trim().isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please type your custom class name")));
+        return;
+      }
+      if (l['subject'] == 'Other' && (l['customSubject'] == null || l['customSubject'].toString().trim().isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please type your custom subject name")));
         return;
       }
     }
@@ -298,108 +391,60 @@ class _FacultyAddAttendancePageState extends State<FacultyAddAttendancePage> {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final batch = FirebaseFirestore.instance.batch();
-        final collection = FirebaseFirestore.instance.collection('attendance');
+      if (user == null) throw Exception("Not logged in");
 
-        // Loop through each row and create a separate document
-        for (var entry in lectureEntries) {
-          final docRef = collection.doc(); // Create new ID
+      final collection = FirebaseFirestore.instance.collection('attendance');
+      final batch = FirebaseFirestore.instance.batch();
 
-          batch.set(docRef, {
-            'uid': user.uid,
-            'date': selectedDate,
-            'lectures': 1, // IMPORTANT: Each row counts as 1 lecture for calculation
-            'subject': "${entry['class']} - ${entry['subject']}", // Combine them so Admin sees both
-            'class': entry['class'],   // Storing separately just in case
-            'topic': entry['subject'], // Storing separately just in case
-            'status': 'Pending',
-            'submittedAt': Timestamp.now(),
-          });
+      Map<String, int> lectureCounts = {};
+
+      for (var l in lectures) {
+        String finalClass = l['class'] == 'Other' ? l['customClass'].toString().trim() : l['class'];
+        String finalSubject = l['subject'] == 'Other' ? l['customSubject'].toString().trim() : l['subject'];
+
+        String key = "$finalClass - $finalSubject";
+        lectureCounts[key] = (lectureCounts[key] ?? 0) + 1;
+      }
+
+      for (var entry in lectureCounts.entries) {
+        String subjectKey = entry.key;
+        int count = entry.value;
+
+        final existingCheck = await collection
+            .where('uid', isEqualTo: user.uid)
+            .where('date', isEqualTo: Timestamp.fromDate(selectedDate!))
+            .where('subject', isEqualTo: subjectKey)
+            .get();
+
+        if (existingCheck.docs.isNotEmpty) {
+          if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Warning: $subjectKey was already submitted today!")));
+          setState(() => isLoading = false);
+          return;
         }
 
-        await batch.commit();
+        final docRef = collection.doc();
+        batch.set(docRef, {
+          'uid': user.uid,
+          'date': Timestamp.fromDate(selectedDate!),
+          'subject': subjectKey,
+          'lectures': count,
+          'status': 'Pending',
+          'submittedAt': Timestamp.now(),
+        });
+      }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Successfully submitted ${lectureEntries.length} lectures!")),
-          );
+      await batch.commit();
 
-          // Reset Form
-          setState(() {
-            selectedDate = null;
-            lectureEntries = [{'class': null, 'subject': null}];
-          });
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Attendance Submitted Successfully")));
+        setState(() {
+          lectures = [{'class': null, 'subject': null, 'customClass': null, 'customSubject': null}];
+        });
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
-  }
-
-  /// RECENT ENTRIES TABLE (Unchanged)
-  Widget _recentEntries() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const SizedBox();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Recent Submissions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('attendance')
-              .where('uid', isEqualTo: user.uid)
-              .orderBy('submittedAt', descending: true)
-              .limit(5)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-            if (snapshot.data!.docs.isEmpty) return const Text("No recent entries.");
-
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: snapshot.data!.docs.length,
-                separatorBuilder: (c, i) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                  final date = (data['date'] as Timestamp).toDate();
-                  final status = data['status'] ?? 'Pending';
-
-                  Color color = Colors.orange;
-                  if (status == 'Verified') color = Colors.green;
-                  if (status == 'Paid') color = Colors.blue;
-
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    title: Text(DateFormat('MMM dd, yyyy').format(date), style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text("${data['lectures']} Lecture • ${data['subject'] ?? ''}"),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(status, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      ],
-    );
   }
 }
