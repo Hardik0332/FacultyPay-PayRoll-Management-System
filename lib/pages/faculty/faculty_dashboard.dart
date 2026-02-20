@@ -75,7 +75,6 @@ class FacultyDashboard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ✅ Removed hardcoded Colors.black87 so text is visible in dark mode
                   Text("Welcome back, $name",
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
@@ -130,7 +129,8 @@ class FacultyDashboard extends StatelessWidget {
               if (!isDesktop) {
                 return Column(
                   children: [
-                    _StatCard(title: "Total Earnings", value: "\₹${earnings.toStringAsFixed(2)}", icon: Icons.attach_money, color: const Color(0xff45a182)),
+                    // ✅ Replaced Icons.attach_money with Icons.currency_rupee here
+                    _StatCard(title: "Total Earnings", value: "\₹${earnings.toStringAsFixed(2)}", icon: Icons.currency_rupee, color: const Color(0xff45a182)),
                     const SizedBox(height: 16),
                     _StatCard(title: "Total Lectures", value: "$totalLectures", icon: Icons.class_outlined, color: Colors.blueAccent),
                     const SizedBox(height: 16),
@@ -141,7 +141,8 @@ class FacultyDashboard extends StatelessWidget {
 
               return Row(
                 children: [
-                  Expanded(child: _StatCard(title: "Total Earnings", value: "\₹${earnings.toStringAsFixed(2)}", icon: Icons.attach_money, color: const Color(0xff45a182))),
+                  // ✅ Replaced Icons.attach_money with Icons.currency_rupee here
+                  Expanded(child: _StatCard(title: "Total Earnings", value: "\₹${earnings.toStringAsFixed(2)}", icon: Icons.currency_rupee, color: const Color(0xff45a182))),
                   const SizedBox(width: 20),
                   Expanded(child: _StatCard(title: "Total Lectures", value: "$totalLectures", icon: Icons.class_outlined, color: Colors.blueAccent)),
                   const SizedBox(width: 20),
@@ -248,7 +249,6 @@ class _StatCard extends StatelessWidget {
               children: [
                 Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12), overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                // ✅ Removed hardcoded Colors.black87 so text is visible in dark mode
                 Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
               ],
             ),
