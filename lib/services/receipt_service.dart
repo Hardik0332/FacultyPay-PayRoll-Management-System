@@ -1,6 +1,8 @@
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
 
 class ReceiptService {
   /// Generates and Prints a PDF Receipt
@@ -13,11 +15,11 @@ class ReceiptService {
     required double totalAmount,
     required String paymentDate,
     required String receiptId,
-    required List<List<String>> lectureDetails, // ✅ NEW: Accepts detailed lecture breakdown
+    List<List<String>>? lectureDetails, // ✅ Added to catch data from your UI
   }) async {
     final doc = pw.Document();
 
-    // 1. LOAD BOTH REGULAR AND BOLD FONTS
+    // Load both regular and bold fonts for the Rupee symbol
     final ttfRegular = await PdfGoogleFonts.robotoRegular();
     final ttfBold = await PdfGoogleFonts.robotoBold();
 
@@ -26,13 +28,10 @@ class ReceiptService {
         pageFormat: PdfPageFormat.a4,
         build: (pw.Context context) {
           return pw.Theme(
-            data: pw.ThemeData.withFont(
-              base: ttfRegular,
-              bold: ttfBold,
-            ),
+            data: pw.ThemeData.withFont(base: ttfRegular, bold: ttfBold),
             child: buildReceiptLayout(
                 facultyName, department, month, totalLectures,
-                ratePerLecture, totalAmount, paymentDate, receiptId, lectureDetails // ✅ Pass to layout builder
+                ratePerLecture, totalAmount, paymentDate, receiptId, lectureDetails
             ),
           );
         },
@@ -47,7 +46,7 @@ class ReceiptService {
 
   static pw.Widget buildReceiptLayout(
       String name, String dept, String month, int lectures,
-      double rate, double total, String date, String id, List<List<String>> lectureDetails) {
+      double rate, double total, String date, String id, List<List<String>>? details) {
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -58,7 +57,7 @@ class ReceiptService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text("FacultyPay", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.Text("College SMS", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
               pw.Text("OFFICIAL SALARY SLIP", style: pw.TextStyle(fontSize: 18, color: PdfColors.grey)),
             ],
           ),
@@ -75,7 +74,6 @@ class ReceiptService {
                 pw.Text("To:", style: pw.TextStyle(color: PdfColors.grey)),
                 pw.Text(name, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16)),
                 pw.Text("Dept: ${dept.toUpperCase()}"),
-                pw.Text("Hourly Rate: ₹ ${rate.toStringAsFixed(2)} / hr", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
               ],
             ),
             pw.Column(
@@ -90,23 +88,41 @@ class ReceiptService {
         ),
         pw.SizedBox(height: 40),
 
-        // ✅ DETAILED DYNAMIC TABLE
-        pw.Table.fromTextArray(
-          headers: ["Date", "Subject", "Lectures", "Rate", "Total"],
-          data: lectureDetails, // ✅ Injects every single lecture here
-          border: null,
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-          headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xff45a182)),
-          rowDecoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
-          cellHeight: 30,
-          cellAlignments: {
-            0: pw.Alignment.centerLeft,
-            1: pw.Alignment.centerLeft,
-            2: pw.Alignment.center,
-            3: pw.Alignment.centerRight,
-            4: pw.Alignment.centerRight,
-          },
-        ),
+        // TABLE (Dynamic based on whether details were provided)
+        if (details != null && details.isNotEmpty)
+          pw.Table.fromTextArray(
+            headers: ["Date", "Subject", "Lectures", "Rate", "Total"],
+            data: details,
+            border: null,
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xff45a182)),
+            cellHeight: 30,
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.centerLeft,
+              2: pw.Alignment.center,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.centerRight,
+            },
+          )
+        else
+          pw.Table.fromTextArray(
+            headers: ["Description", "Quantity", "Rate", "Total"],
+            data: [
+              ["Teaching Services - $month", "$lectures Lectures", "₹ ${rate.toStringAsFixed(2)}", "₹ ${total.toStringAsFixed(2)}"],
+            ],
+            border: null,
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xff45a182)),
+            cellHeight: 30,
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.center,
+              2: pw.Alignment.centerRight,
+              3: pw.Alignment.centerRight,
+            },
+          ),
+
         pw.Divider(),
 
         // TOTAL
@@ -115,7 +131,7 @@ class ReceiptService {
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
-              pw.Text("TOTAL AMOUNT PAID: ", style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+              pw.Text("NET TOTAL: ", style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
               pw.Text("₹ ${total.toStringAsFixed(2)}", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
             ],
           ),

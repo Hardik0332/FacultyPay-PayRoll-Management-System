@@ -12,6 +12,7 @@ import 'pages/faculty/add_attendance_page.dart';
 import 'services/auth_gate.dart';
 import 'pages/faculty/faculty_salary_summary_page.dart';
 import 'pages/admin/admin_reports_page.dart';
+import 'pages/faculty/faculty_profile_page.dart';
 
 // ✅ Global Variable for Dark Mode
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
@@ -99,6 +100,7 @@ class MyApp extends StatelessWidget {
             '/faculty/dashboard': (context) => const FacultyDashboard(),
             '/faculty/add-attendance': (context) => const FacultyAddAttendancePage(),
             '/admin/reports': (context) => const AdminReportsPage(),
+            '/faculty/profile': (context) => const FacultyProfilePage(),
           },
         );
       },

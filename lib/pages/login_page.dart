@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -97,32 +96,43 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter both email and password")),
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
     try {
-      UserCredential userCred = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+      // Just sign in. The AuthGate in main.dart will detect the auth state change 
+      // and redirect the user automatically based on their Firestore role.
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCred.user!.uid)
-          .get();
-
-      if (userDoc.exists) {
-        String role = userDoc.get('role');
-        if (mounted) {
-          if (role == 'admin') {
-            Navigator.pushReplacementNamed(context, '/admin/dashboard');
-          } else {
-            Navigator.pushReplacementNamed(context, '/faculty/dashboard');
-          }
+      // No need to navigate here, AuthGate handles it.
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String message = "Login Failed";
+        if (e.code == 'user-not-found') {
+          message = "No user found for that email.";
+        } else if (e.code == 'wrong-password') {
+          message = "Wrong password provided.";
+        } else {
+          message = e.message ?? message;
         }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Login Failed: ${e.toString()}")),
+          SnackBar(content: Text("An unexpected error occurred: ${e.toString()}")),
         );
       }
     } finally {

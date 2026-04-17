@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../pages/login_page.dart';
+import '../pages/admin/admin_dashboard.dart';
+import '../pages/faculty/faculty_dashboard.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -11,61 +13,92 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        // 1. Loading State for Auth
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
+        // 2. If NOT logged in, show Login Page
         if (!snapshot.hasData) {
-          return const LoginRedirect();
+          return const LoginPage();
         }
 
+        // 3. If logged in, check role and redirect
         return const RoleRedirect();
       },
     );
   }
 }
 
-class LoginRedirect extends StatelessWidget {
-  const LoginRedirect({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const LoginPage(); // ✅ SHOW LOGIN PAGE
-  }
-}
-
-
 class RoleRedirect extends StatelessWidget {
   const RoleRedirect({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return const LoginPage();
 
     return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
+      future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        // While fetching user role from Firestore
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final role = snapshot.data!['role'];
+        // Handle Errors (e.g., no internet or Firestore error)
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 60),
+                  const SizedBox(height: 16),
+                  Text("Error: ${snapshot.error}"),
+                  TextButton(
+                    onPressed: () => FirebaseAuth.instance.signOut(),
+                    child: const Text("Go Back to Login"),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (role == 'admin') {
-            Navigator.pushReplacementNamed(context, '/admin/dashboard');
-          } else {
-            Navigator.pushReplacementNamed(context, '/faculty/dashboard');
-          }
-        });
+        // Handle case where user exists in Auth but not in Firestore
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("User account record not found."),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => FirebaseAuth.instance.signOut(),
+                    child: const Text("Logout"),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        // Redirect based on role
+        final data = snapshot.data!.data() as Map<String, dynamic>?;
+        final String role = data?['role'] ?? 'faculty';
+
+        if (role == 'admin') {
+          return const AdminDashboard();
+        } else {
+          return const FacultyDashboard();
+        }
       },
     );
   }

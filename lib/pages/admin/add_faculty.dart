@@ -16,6 +16,7 @@ class _AddFacultyPageState extends State<AddFacultyPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController rateController = TextEditingController();
+  final TextEditingController upiController = TextEditingController(); // ✅ Added UPI Controller
   String? selectedDepartment;
   bool isLoading = false;
 
@@ -42,7 +43,6 @@ class _AddFacultyPageState extends State<AddFacultyPage> {
 
           // MAIN CONTENT
           Expanded(
-            // ✅ ONLY ADDED REFRESH INDICATOR HERE
             child: RefreshIndicator(
               color: theme.primaryColor,
               backgroundColor: theme.cardColor,
@@ -52,12 +52,12 @@ class _AddFacultyPageState extends State<AddFacultyPage> {
                 emailController.clear();
                 passwordController.clear();
                 rateController.clear();
+                upiController.clear();
                 setState(() {
                   selectedDepartment = null;
                 });
               },
               child: SingleChildScrollView(
-                // ✅ ADDED PHYSICS FOR SCROLLING
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.all(isDesktop ? 40 : 16),
                 child: Column(
@@ -106,6 +106,9 @@ class _AddFacultyPageState extends State<AddFacultyPage> {
                                 _buildDeptField(theme),
                               ],
                             ),
+
+                          const SizedBox(height: 24),
+                          _buildUpiField(), // ✅ Added UPI Field here
 
                           const SizedBox(height: 40),
                           const Divider(),
@@ -177,6 +180,20 @@ class _AddFacultyPageState extends State<AddFacultyPage> {
     );
   }
 
+  // ✅ New UPI Field Widget
+  Widget _buildUpiField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel("UPI ID (Optional)"),
+        TextField(
+          controller: upiController,
+          decoration: _inputDeco("e.g. john@ybl", icon: Icons.qr_code),
+        ),
+      ],
+    );
+  }
+
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -223,6 +240,7 @@ class _AddFacultyPageState extends State<AddFacultyPage> {
         'role': 'faculty',
         'department': selectedDepartment,
         'hourlyRate': double.parse(rateController.text),
+        'upiId': upiController.text.trim(), // ✅ Saves UPI to Firebase
         'createdAt': Timestamp.now(),
       });
 

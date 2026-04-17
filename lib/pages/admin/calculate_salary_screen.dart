@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart'; // ✅ Added for deep linking
+import 'package:qr_flutter/qr_flutter.dart'; // ✅ Added for QR code
 import '../../widgets/app_sidebars.dart';
 import '../../services/receipt_service.dart';
 
@@ -33,7 +35,6 @@ class CalculateSalaryScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 if (isDesktop)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -55,11 +56,9 @@ class CalculateSalaryScreen extends StatelessWidget {
 
                 if (isDesktop) const SizedBox(height: 20),
 
-                // FACULTY SALARY TABLE
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.all(isDesktop ? 32 : 16),
-                    // ✅ 1. WRAPPED IN REFRESH INDICATOR
                     child: RefreshIndicator(
                       color: theme.primaryColor,
                       backgroundColor: theme.cardColor,
@@ -74,7 +73,6 @@ class CalculateSalaryScreen extends StatelessWidget {
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
-                          // ✅ 2. Allow dragging even if no data is found
                           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                             return ListView(
                               physics: const AlwaysScrollableScrollPhysics(),
@@ -94,7 +92,6 @@ class CalculateSalaryScreen extends StatelessWidget {
                               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
                             ),
                             child: ListView.separated(
-                              // ✅ 3. ENABLES PULL TO REFRESH ON THE LIST
                               physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.all(0),
                               itemCount: facultyDocs.length,
@@ -127,11 +124,11 @@ class _SalaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final data = facultyDoc.data() as Map<String, dynamic>;
     final String uid = facultyDoc.id;
     final String name = data['name'] ?? 'Unknown';
     final String dept = data['department'] ?? '-';
+    final String upiId = data['upiId'] ?? ''; // ✅ Ensure UPI ID is fetched
     final double rate = (data['hourlyRate'] is int)
         ? (data['hourlyRate'] as int).toDouble()
         : (data['hourlyRate'] as double? ?? 0.0);
@@ -171,7 +168,6 @@ class _SalaryRow extends StatelessWidget {
 
         double owedAmount = owedLectures * rate;
         double paidAmountThisMonth = paidLecturesThisMonth * rate;
-
         bool isOwed = owedAmount > 0;
 
         int displayLectures = isOwed ? owedLectures : paidLecturesThisMonth;
@@ -202,7 +198,8 @@ class _SalaryRow extends StatelessWidget {
         if (isOwed) {
           actionBtn = ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff45a182)),
-              onPressed: () => _payFaculty(context, uid, docsToPay),
+              // ✅ Pass all parameters safely
+              onPressed: () => _payFaculty(context, uid, docsToPay, name, displayAmount, upiId),
               child: const Text("Pay Now")
           );
         } else if (paidLecturesThisMonth > 0) {
@@ -225,11 +222,10 @@ class _SalaryRow extends StatelessWidget {
                   ]);
                 }
 
-                String currentMonthLabel = DateFormat('MMMM yyyy').format(DateTime.now());
                 ReceiptService.printReceipt(
                   facultyName: name,
                   department: dept,
-                  month: currentMonthLabel,
+                  month: DateFormat('MMMM yyyy').format(DateTime.now()),
                   totalLectures: displayLectures,
                   ratePerLecture: rate,
                   totalAmount: displayAmount,
@@ -275,27 +271,101 @@ class _SalaryRow extends StatelessWidget {
     );
   }
 
-  Future<void> _payFaculty(BuildContext context, String uid, List<QueryDocumentSnapshot> docs) async {
+  // ✅ BULLETPROOF PAYMENT LOGIC WITH STRICT WEB BOUNDARIES
+  Future<void> _payFaculty(BuildContext context, String uid, List<QueryDocumentSnapshot> docs, String facultyName, double amount, String upiId) async {
+    // 1. Grab theme safely before async gap
+    final Color cardColor = Theme.of(context).cardColor;
+
+    // 2. Format UPI String
+    final String upiString = upiId.isNotEmpty
+        ? "upi://pay?pa=$upiId&pn=${Uri.encodeComponent(facultyName)}&am=${amount.toStringAsFixed(2)}&cu=INR"
+        : "";
+
     bool confirm = await showDialog(
         context: context,
         builder: (c) => AlertDialog(
-          backgroundColor: Theme.of(context).cardColor,
-          title: const Text("Confirm Payment"),
-          content: Text("Mark ${docs.length} attendance records as PAID?"),
+          backgroundColor: cardColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text("Pay $facultyName"),
+          // ✅ 3. THE FIX: Strict Width to prevent Infinite Layout Loops on Web
+          content: SizedBox(
+            width: 320,
+            // ✅ 4. THE FIX: Strict Height parameters
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Amount Due: ₹${amount.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text("Total Lectures: ${docs.length}", style: const TextStyle(color: Colors.grey)),
+
+                if (upiId.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  const Text("Scan to Pay", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  const Text("Use GPay, PhonePe, or Paytm on your phone", style: TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center,),
+                  const SizedBox(height: 16),
+
+                  // ✅ 5. THE FIX: Strict Box constraints for the QR code
+                  Container(
+                    width: 200,
+                    height: 200,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300)
+                    ),
+                    child: QrImageView(
+                      data: upiString,
+                      version: QrVersions.auto,
+                      size: 180.0,
+                      backgroundColor: Colors.white, // Forces visible paint on web
+                    ),
+                  ),
+                ]
+              ],
+            ),
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text("Cancel")),
-            ElevatedButton(onPressed: () => Navigator.pop(c, true), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff45a182)), child: const Text("Confirm")),
+            TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text("Cancel", style: TextStyle(color: Colors.grey))
+            ),
+
+            if (upiId.isNotEmpty)
+              ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final Uri upiUrl = Uri.parse(upiString);
+                      if (await canLaunchUrl(upiUrl)) {
+                        await launchUrl(upiUrl, mode: LaunchMode.externalApplication);
+                        if (context.mounted) Navigator.pop(c, true);
+                      } else {
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No UPI App found on this device.")));
+                      }
+                    } catch (e) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not open UPI.")));
+                    }
+                  },
+                  icon: const Icon(Icons.touch_app, size: 18),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+                  label: const Text("Open UPI App")
+              ),
+
+            ElevatedButton(
+                onPressed: () => Navigator.pop(c, true),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff45a182)),
+                child: const Text("Mark as Paid")
+            ),
           ],
         )
     ) ?? false;
 
     if (confirm) {
       final batch = FirebaseFirestore.instance.batch();
-
       for (var doc in docs) {
         batch.update(doc.reference, {'status': 'Paid'});
       }
-
       await batch.commit();
 
       if(context.mounted) {

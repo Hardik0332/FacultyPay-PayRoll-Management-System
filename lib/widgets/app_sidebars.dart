@@ -127,6 +127,7 @@ class FacultySidebar extends StatelessWidget {
           _buildNavItem(context, Icons.dashboard, "Dashboard", '/faculty/dashboard'),
           _buildNavItem(context, Icons.calendar_today, "Add Attendance", '/faculty/add-attendance'),
           _buildNavItem(context, Icons.account_balance_wallet, "Salary History", '/faculty/salary-history'),
+          _buildNavItem(context, Icons.person, "My Profile", '/faculty/profile'),
 
           const Spacer(),
           ValueListenableBuilder<ThemeMode>(

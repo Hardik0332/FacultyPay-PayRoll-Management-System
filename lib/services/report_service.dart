@@ -12,46 +12,37 @@ class ReportService {
     required List<QueryDocumentSnapshot> docs,
     required bool isAdminReport,
     Map<String, String>? facultyNames,
-    Map<String, double>? facultyRates, // ✅ Added for Admin Salary Calc
-    String? singleFacultyName, // ✅ Added for Individual Info Header
-    String? singleFacultyDept, // ✅ Added for Individual Info Header
-    double? singleFacultyRate, // ✅ Added for Individual Info Header
-    required double totalAmountPaid,
+    // ✅ Added new optional fields your UI is sending
+    String? singleFacultyName,
+    String? singleFacultyDept,
+    double? singleFacultyRate,
+    double? totalAmountPaid,
   }) async {
     final doc = pw.Document();
 
-    // Load Font (Required for Rupee Symbol)
     final ttf = await PdfGoogleFonts.robotoRegular();
     final ttfBold = await PdfGoogleFonts.robotoBold();
 
-    // Prepare Data for Table
     final tableData = <List<String>>[];
 
-    // ✅ Header Row: Added 'Earned' column only for Admin Report
     final headers = isAdminReport
-        ? ['Date', 'Faculty', 'Class - Subject', 'Lectures', 'Status', 'Earned']
+        ? ['Date', 'Faculty', 'Class - Subject', 'Lectures', 'Status']
         : ['Date', 'Class - Subject', 'Lectures', 'Status'];
 
     tableData.add(headers);
 
-    // Rows
     for (var d in docs) {
       final data = d.data() as Map<String, dynamic>;
       final date = (data['date'] as Timestamp).toDate();
       final dateStr = DateFormat('dd MMM yyyy').format(date);
       final subject = data['subject'] ?? '-';
-      final int lecturesCount = data['lectures'] as int? ?? 0;
-      final lectures = lecturesCount.toString();
+      final lectures = data['lectures'].toString();
       final status = data['status'] ?? 'Pending';
 
       if (isAdminReport) {
         final uid = data['uid'] ?? '';
         final name = facultyNames?[uid] ?? 'Unknown';
-        final rate = facultyRates?[uid] ?? 0.0;
-        final earned = (lecturesCount * rate).toStringAsFixed(2);
-
-        // ✅ Add Earned Calculation to Row
-        tableData.add([dateStr, name, subject, lectures, status, "₹ $earned"]);
+        tableData.add([dateStr, name, subject, lectures, status]);
       } else {
         tableData.add([dateStr, subject, lectures, status]);
       }
@@ -68,7 +59,7 @@ class ReportService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text("FacultyPay", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                pw.Text("College SMS", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
                 pw.Text("HISTORY REPORT", style: pw.TextStyle(fontSize: 16, color: PdfColors.grey)),
               ],
             ),
@@ -76,30 +67,15 @@ class ReportService {
           pw.SizedBox(height: 10),
           pw.Text(title, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.Text(subtitle, style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
-          pw.SizedBox(height: 20),
 
-          // ✅ INDIVIDUAL REPORT INFO HEADER
+          // Print Faculty info if it's a specific teacher's report
           if (!isAdminReport && singleFacultyName != null) ...[
-            pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text("Faculty: $singleFacultyName", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
-                        pw.Text("Department: ${singleFacultyDept?.toUpperCase()}", style: const pw.TextStyle(fontSize: 12)),
-                      ]
-                  ),
-                  pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        pw.Text("Hourly Rate: ₹ ${singleFacultyRate?.toStringAsFixed(2)}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14, color: PdfColors.green)),
-                      ]
-                  )
-                ]
-            ),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 10),
+            pw.Text("Faculty: $singleFacultyName", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            pw.Text("Department: ${singleFacultyDept ?? ''}"),
           ],
+
+          pw.SizedBox(height: 20),
 
           // TABLE
           pw.Table.fromTextArray(
@@ -116,7 +92,6 @@ class ReportService {
               2: pw.Alignment.centerLeft,
               3: pw.Alignment.center,
               4: pw.Alignment.center,
-              5: pw.Alignment.centerRight, // ✅ Earned Column Alignment
             }
                 : {
               0: pw.Alignment.centerLeft,
@@ -128,14 +103,12 @@ class ReportService {
 
           pw.SizedBox(height: 20),
           pw.Divider(),
-
-          // FOOTER WITH TOTAL AMOUNT PAID
           pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text("Total Records: ${docs.length}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                pw.Text("Total Amount Paid: ₹ ${totalAmountPaid.toStringAsFixed(2)}",
-                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+                if (totalAmountPaid != null && totalAmountPaid > 0)
+                  pw.Text("Total Paid: ₹ ${totalAmountPaid.toStringAsFixed(2)}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
               ]
           ),
         ],

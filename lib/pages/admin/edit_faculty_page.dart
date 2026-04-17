@@ -20,6 +20,7 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
   late TextEditingController nameController;
   late TextEditingController emailController;
   late TextEditingController rateController;
+  late TextEditingController upiController; // ✅ Added
   String? selectedDepartment;
   bool isLoading = false;
 
@@ -33,6 +34,7 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
     nameController = TextEditingController(text: widget.facultyData['name']);
     emailController = TextEditingController(text: widget.facultyData['email']);
     rateController = TextEditingController(text: widget.facultyData['hourlyRate'].toString());
+    upiController = TextEditingController(text: widget.facultyData['upiId'] ?? ''); // ✅ Added
     selectedDepartment = widget.facultyData['department'];
   }
 
@@ -53,6 +55,7 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
         'email': emailController.text.trim(),
         'hourlyRate': double.parse(rateController.text),
         'department': selectedDepartment,
+        'upiId': upiController.text.trim(), // ✅ Updates UPI in Firebase
       });
 
       if (mounted) {
@@ -90,7 +93,6 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
           if (isDesktop) const AdminSidebar(activeRoute: '/admin/view-faculty'),
 
           Expanded(
-            // ✅ ONLY ADDED REFRESH INDICATOR HERE
             child: RefreshIndicator(
               color: theme.primaryColor,
               backgroundColor: theme.cardColor,
@@ -101,7 +103,6 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
                 });
               },
               child: SingleChildScrollView(
-                // ✅ ADDED PHYSICS FOR SCROLLING
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.all(isDesktop ? 40 : 16),
                 child: Column(
@@ -139,14 +140,13 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
                           TextField(controller: emailController, readOnly: true, decoration: _inputDeco("faculty@university.edu", icon: Icons.email_outlined)),
                           const SizedBox(height: 24),
 
-                          // RESPONSIVE ROW FOR RATE AND DEPARTMENT
                           if (isDesktop)
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(child: _buildRateField()),
                                 const SizedBox(width: 24),
-                                Expanded(child: _buildDeptField(theme)), // Pass theme
+                                Expanded(child: _buildDeptField(theme)),
                               ],
                             )
                           else
@@ -155,9 +155,12 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
                               children: [
                                 _buildRateField(),
                                 const SizedBox(height: 24),
-                                _buildDeptField(theme), // Pass theme
+                                _buildDeptField(theme),
                               ],
                             ),
+
+                          const SizedBox(height: 24),
+                          _buildUpiField(), // ✅ Added UPI field
 
                           const SizedBox(height: 40),
                           const Divider(),
@@ -193,7 +196,6 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
     );
   }
 
-  // Helpers for Styling
   Widget _buildRateField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,6 +227,20 @@ class _EditFacultyPageState extends State<EditFacultyPage> {
           ],
           onChanged: (v) => setState(() => selectedDepartment = v),
           decoration: _inputDeco("Select Dept"),
+        ),
+      ],
+    );
+  }
+
+  // ✅ New UPI Field Widget
+  Widget _buildUpiField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel("UPI ID (Optional)"),
+        TextField(
+          controller: upiController,
+          decoration: _inputDeco("e.g. john@ybl", icon: Icons.qr_code),
         ),
       ],
     );
