@@ -41,51 +41,53 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAQ1BW90YxNmQqTLakzJPGqFYRIlGaI2qI',
-    appId: '1:1078975084440:web:983036b2aae2cd4d0c5ded',
-    messagingSenderId: '1078975084440',
-    projectId: 'fixed-project-new',
-    authDomain: 'fixed-project-new.firebaseapp.com',
-    storageBucket: 'fixed-project-new.firebasestorage.app',
+    apiKey: 'AIzaSyB888vVD-rALFgSSgh8yJw7QccOfx_xHT4',
+    appId: '1:1085093252774:web:00fc55a403c0192a7e2e67',
+    messagingSenderId: '1085093252774',
+    projectId: 'facultypay',
+    authDomain: 'facultypay.firebaseapp.com',
+    storageBucket: 'facultypay.firebasestorage.app',
+    measurementId: 'G-GMQF5HGFQ5',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAIUWzJ-KvXzF3ZpvZgDJfgkCNrsqtYcPg',
-    appId: '1:1078975084440:android:e4ce0e10c883a2a80c5ded',
-    messagingSenderId: '1078975084440',
-    projectId: 'fixed-project-new',
-    storageBucket: 'fixed-project-new.firebasestorage.app',
+    apiKey: 'AIzaSyBycG2CXCfYuLz68dXhAG5NKtZGIu0sGQo',
+    appId: '1:1085093252774:android:c2446a40645270dc7e2e67',
+    messagingSenderId: '1085093252774',
+    projectId: 'facultypay',
+    storageBucket: 'facultypay.firebasestorage.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCINvk0atIRf7W0UXjJqdMmN_IEbp71spc',
-    appId: '1:1078975084440:ios:cdd4e84327bd64eb0c5ded',
-    messagingSenderId: '1078975084440',
-    projectId: 'fixed-project-new',
-    storageBucket: 'fixed-project-new.firebasestorage.app',
-    androidClientId: '1078975084440-me24jdse5ad3ukkl7ug42tcbetojfppe.apps.googleusercontent.com',
-    iosClientId: '1078975084440-3mnlmc3sfq52d91k1c8jn39i2nmk4n32.apps.googleusercontent.com',
+    apiKey: 'AIzaSyDBwohDvngZzWrB-T2Rd9-8aeIB7Mr8V8g',
+    appId: '1:1085093252774:ios:999ce622be50c5797e2e67',
+    messagingSenderId: '1085093252774',
+    projectId: 'facultypay',
+    storageBucket: 'facultypay.firebasestorage.app',
+    androidClientId: '1085093252774-nitvptcsla67ebibet6f5b8dfgpkis2f.apps.googleusercontent.com',
+    iosClientId: '1085093252774-otr25aj5u6rm1qf384nov8vvt09k5dvl.apps.googleusercontent.com',
     iosBundleId: 'com.example.fixedProject',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCINvk0atIRf7W0UXjJqdMmN_IEbp71spc',
-    appId: '1:1078975084440:ios:cdd4e84327bd64eb0c5ded',
-    messagingSenderId: '1078975084440',
-    projectId: 'fixed-project-new',
-    storageBucket: 'fixed-project-new.firebasestorage.app',
-    androidClientId: '1078975084440-me24jdse5ad3ukkl7ug42tcbetojfppe.apps.googleusercontent.com',
-    iosClientId: '1078975084440-3mnlmc3sfq52d91k1c8jn39i2nmk4n32.apps.googleusercontent.com',
+    apiKey: 'AIzaSyDBwohDvngZzWrB-T2Rd9-8aeIB7Mr8V8g',
+    appId: '1:1085093252774:ios:999ce622be50c5797e2e67',
+    messagingSenderId: '1085093252774',
+    projectId: 'facultypay',
+    storageBucket: 'facultypay.firebasestorage.app',
+    androidClientId: '1085093252774-nitvptcsla67ebibet6f5b8dfgpkis2f.apps.googleusercontent.com',
+    iosClientId: '1085093252774-otr25aj5u6rm1qf384nov8vvt09k5dvl.apps.googleusercontent.com',
     iosBundleId: 'com.example.fixedProject',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyCyrjX6tkntmY6F6x-FSicxSEQBCP6wvug',
-    appId: '1:1078975084440:web:9af2ad47379308250c5ded',
-    messagingSenderId: '1078975084440',
-    projectId: 'fixed-project-new',
-    authDomain: 'fixed-project-new.firebaseapp.com',
-    storageBucket: 'fixed-project-new.firebasestorage.app',
+    apiKey: 'AIzaSyB888vVD-rALFgSSgh8yJw7QccOfx_xHT4',
+    appId: '1:1085093252774:web:60abbdb17c1998e47e2e67',
+    messagingSenderId: '1085093252774',
+    projectId: 'facultypay',
+    authDomain: 'facultypay.firebaseapp.com',
+    storageBucket: 'facultypay.firebasestorage.app',
+    measurementId: 'G-SPJM0END8J',
   );
 
 }

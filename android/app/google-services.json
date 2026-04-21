@@ -7,6 +7,35 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:1085093252774:android:c2446a40645270dc7e2e67",
+        "android_client_info": {
+          "package_name": "com.college.payroll"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1085093252774-4ee6ucv8alpslq5jvklba1pokdi2m68c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBycG2CXCfYuLz68dXhAG5NKtZGIu0sGQo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1085093252774-4ee6ucv8alpslq5jvklba1pokdi2m68c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:1085093252774:android:bb969fbc93bcc7ba7e2e67",
         "android_client_info": {
           "package_name": "com.example.fixed_project"

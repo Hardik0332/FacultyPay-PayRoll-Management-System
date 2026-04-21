@@ -1,0 +1,100 @@
+{"users": [
+{
+  "localId": "3LJVHNBjrzU6SRtArRvUXmIuiNw1",
+  "email": "robstark@college.com",
+  "emailVerified": false,
+  "passwordHash": "w8aUF+6ndgET9mtpVdWr+sx2djWTcRg3FLGoMPLfLz/6GxZLp6J878rMfshu3tGgRUuKjFT4u2TvtSOk1APu7A==",
+  "salt": "v5NQH6vRz+NEsQ==",
+  "lastSignedInAt": "1773919764648",
+  "createdAt": "1771505132092",
+  "providerUserInfo": []
+},
+{
+  "localId": "BtfGCmIZ0MPeanqAPyfhq4NS9kc2",
+  "email": "jp@college.com",
+  "emailVerified": false,
+  "passwordHash": "hz1Klu/hJbGjm3sEHUKdYUabmxw3fObYke25eJSgptboLShP0fUaVCKItPCWisLQpQOHhFxbng4y8+dxfULE3w==",
+  "salt": "WuW/DWzAUSYN6g==",
+  "lastSignedInAt": "1771657268368",
+  "createdAt": "1771657268368",
+  "providerUserInfo": []
+},
+{
+  "localId": "Ct1xlizG02VCTVbS7nNBiAfASlH3",
+  "email": "ww@college.com",
+  "emailVerified": false,
+  "passwordHash": "ebAv80pgjmL5f4fLG2La8MiB3PmV90Dh8oG5FrHsuc9xwqYb9Qo1EdvPZAVy3MHL+RffHJv61m+MBc0xb7IHxg==",
+  "salt": "D01VAoEJun5+NQ==",
+  "lastSignedInAt": "1776450090306",
+  "createdAt": "1771505510093",
+  "providerUserInfo": []
+},
+{
+  "localId": "JeoWqfmP9xV9FxEDN5ZGzvhHY3p2",
+  "email": "gg@college.com",
+  "emailVerified": false,
+  "passwordHash": "X9n0/NAawChOPxlwXnbxvk+lxnHFZBIt/jZ/GEHrXpXoWKp8BtEPpEAz7e0MCpmBedHdnKUMH29m/lQwGHmiqQ==",
+  "salt": "8DPs+n3eCSOm2w==",
+  "lastSignedInAt": "1771648396322",
+  "createdAt": "1771648299835",
+  "providerUserInfo": []
+},
+{
+  "localId": "LR6P1GPNFOSIvXcXTrdKk6QaSum1",
+  "email": "admin@college.com",
+  "emailVerified": false,
+  "passwordHash": "QrmWJPTzIlhYt7vRkOgwQFGvqDb3j7V3tTvFWXFGOC9zAQWjlJ/pSlOiyONsMkSG1T3tCmuMDYL8uzphK/0CqA==",
+  "salt": "Zoj7BYcyYZj7Ew==",
+  "lastSignedInAt": "1776689627707",
+  "createdAt": "1769886498391",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "RcHN0tW808NYpLfFVu1ibWZyzrA2",
+  "email": "omkar@example.com",
+  "emailVerified": false,
+  "passwordHash": "IOdK51xSfLqv1wTwux4wZVkHxbaAQ1WdD3xpcPFF9zUZGUtdH8gsxNw+MegOJsvXcHMdCX49ZTvucehJgXuM4w==",
+  "salt": "IN8qK2Y+6GlJqw==",
+  "lastSignedInAt": "1771661548762",
+  "createdAt": "1771661548762",
+  "providerUserInfo": []
+},
+{
+  "localId": "co3DEcsyY0R3v2W8CNDgoUuc5Yo2",
+  "email": "tyrionlan@college.com",
+  "emailVerified": false,
+  "passwordHash": "BzBxh9sLKBimRyVVnocfnVIG3ErSuoZQgwPA09fzyuhiSal+DaR/BNC/lj1atl7DPLrv0QKpDMMRHSYDuDYIVg==",
+  "salt": "fIT5l9R3PcOulg==",
+  "lastSignedInAt": "1771648537139",
+  "createdAt": "1771505227409",
+  "providerUserInfo": []
+},
+{
+  "localId": "kE8Mg6bKHqPJLGANSyJPOWRhHwE2",
+  "email": "thorin@college.com",
+  "emailVerified": false,
+  "passwordHash": "0vgK2VpK9oF+o8n4sNmHnKXuuk4F94AzXB70X/LJn92iTnnTtIfwld50bnJ7/J+HXL1EpnrkeXmnd3ds/Pyukg==",
+  "salt": "zuhMWwDCkPh0gQ==",
+  "lastSignedInAt": "1771509604711",
+  "createdAt": "1771505655186",
+  "providerUserInfo": []
+},
+{
+  "localId": "n9dLVrRyuoRmABmeNPId2BTjY7p2",
+  "email": "hardik0338@gmail.com",
+  "emailVerified": true,
+  "displayName": "Hardik Rathod",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKoFd0IIi7kL82c1ov-oUKRm0weYxIlPfF6DHCnZtH04KYtCw=s96-c",
+  "lastSignedInAt": "1776689561817",
+  "createdAt": "1776535074656",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "105378056645183489213",
+      "email": "hardik0338@gmail.com",
+      "displayName": "Hardik Rathod",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKoFd0IIi7kL82c1ov-oUKRm0weYxIlPfF6DHCnZtH04KYtCw=s96-c"
+    }
+  ]
+}]}
