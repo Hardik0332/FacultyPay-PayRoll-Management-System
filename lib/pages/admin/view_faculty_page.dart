@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 import '../../widgets/app_sidebars.dart';
 import 'edit_faculty_page.dart';
 
@@ -141,13 +142,19 @@ class _ViewFacultyPageState extends State<ViewFacultyPage> {
                               final String email = data['email'] ?? 'No Email';
                               final String dept = data['department'] ?? 'General';
                               final double rate = (data['hourlyRate'] is int) ? (data['hourlyRate'] as int).toDouble() : (data['hourlyRate'] as double? ?? 0.0);
+                              final String? avatarBase64 = data['avatarBase64'];
 
                               Widget profileInfo = Row(
                                 children: [
                                   CircleAvatar(
                                     radius: 24,
                                     backgroundColor: theme.primaryColor.withOpacity(0.1),
-                                    child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'F', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold)),
+                                    backgroundImage: avatarBase64 != null && avatarBase64.isNotEmpty
+                                        ? MemoryImage(base64Decode(avatarBase64))
+                                        : null,
+                                    child: (avatarBase64 == null || avatarBase64.isEmpty)
+                                        ? Text(name.isNotEmpty ? name[0].toUpperCase() : 'F', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold))
+                                        : null,
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(

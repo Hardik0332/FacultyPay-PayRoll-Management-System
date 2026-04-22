@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 import '../../widgets/app_sidebars.dart';
 
 class AdminViewAttendancePage extends StatelessWidget {
@@ -203,6 +205,7 @@ class _TopHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final user = FirebaseAuth.instance.currentUser;
 
     return Container(
       height: 70,
@@ -215,10 +218,26 @@ class _TopHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text("Faculty Attendance Log", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          CircleAvatar(
-              radius: 18,
-              backgroundColor: theme.primaryColor.withOpacity(0.1),
-              child: Text("A", style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold))
+          StreamBuilder<DocumentSnapshot>(
+            stream: user != null ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots() : null,
+            builder: (context, snapshot) {
+              String? avatarBase64;
+              if (snapshot.hasData && snapshot.data!.exists) {
+                final data = snapshot.data!.data() as Map<String, dynamic>?;
+                if (data != null) avatarBase64 = data['avatarBase64'];
+              }
+
+              return CircleAvatar(
+                  radius: 18,
+                  backgroundColor: theme.primaryColor.withOpacity(0.1),
+                  backgroundImage: avatarBase64 != null && avatarBase64.isNotEmpty
+                      ? MemoryImage(base64Decode(avatarBase64))
+                      : null,
+                  child: (avatarBase64 == null || avatarBase64.isEmpty)
+                      ? Text("A", style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold))
+                      : null,
+              );
+            }
           ),
         ],
       ),

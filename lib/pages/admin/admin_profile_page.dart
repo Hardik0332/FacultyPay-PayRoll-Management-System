@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import '../../widgets/app_sidebars.dart';
 
 class AdminProfilePage extends StatefulWidget {
@@ -14,6 +16,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
   final TextEditingController nameController = TextEditingController();
+
+  String? avatarBase64;
+  final ImagePicker _picker = ImagePicker();
 
   // Read-only fields
   String email = "";
@@ -39,6 +44,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
           nameController.text = data['name'] ?? 'Admin User';
           email = data['email'] ?? currentUser!.email ?? '';
           role = (data['role'] ?? 'admin').toString().toUpperCase();
+          avatarBase64 = data['avatarBase64'];
           isLoading = false;
         });
       } else {
@@ -77,6 +83,38 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error updating profile: $e")));
     } finally {
       if (mounted) setState(() => isSaving = false);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 256,
+        maxHeight: 256,
+        imageQuality: 50,
+      );
+
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        final base64Str = base64Encode(bytes);
+        setState(() {
+          avatarBase64 = base64Str;
+        });
+        
+        // Save immediately to Firestore
+        await FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).set({
+          'avatarBase64': base64Str,
+        }, SetOptions(merge: true));
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Profile picture updated!")));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error picking image: $e")));
+      }
     }
   }
 
@@ -125,6 +163,26 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // --- PROFILE PICTURE ---
+                        Center(
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.grey.shade200,
+                              backgroundImage: avatarBase64 != null && avatarBase64!.isNotEmpty
+                                  ? MemoryImage(base64Decode(avatarBase64!))
+                                  : null,
+                              child: (avatarBase64 == null || avatarBase64!.isEmpty)
+                                  ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Center(child: Text("Tap to change picture", style: TextStyle(color: Colors.grey, fontSize: 12))),
+                        const SizedBox(height: 32),
+
                         // --- EDITABLE FIELDS ---
                         const Text("Editable Details", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),

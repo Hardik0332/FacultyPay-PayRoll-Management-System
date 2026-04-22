@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 import '../../widgets/app_sidebars.dart';
 
 class FacultyDashboard extends StatelessWidget {
@@ -70,8 +71,10 @@ class FacultyDashboard extends StatelessWidget {
       stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
       builder: (context, snapshot) {
         String name = "Faculty Member";
+        String? avatarBase64;
         if (snapshot.hasData && snapshot.data!.exists) {
           name = snapshot.data!['name'] ?? "Faculty Member";
+          avatarBase64 = snapshot.data!['avatarBase64'];
         }
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -93,7 +96,12 @@ class FacultyDashboard extends StatelessWidget {
             CircleAvatar(
               radius: 24,
               backgroundColor: theme.primaryColor.withOpacity(0.1),
-              child: Icon(Icons.person, color: theme.primaryColor),
+              backgroundImage: avatarBase64 != null && avatarBase64.isNotEmpty
+                  ? MemoryImage(base64Decode(avatarBase64))
+                  : null,
+              child: (avatarBase64 == null || avatarBase64.isEmpty)
+                  ? Icon(Icons.person, color: theme.primaryColor)
+                  : null,
             )
           ],
         );
