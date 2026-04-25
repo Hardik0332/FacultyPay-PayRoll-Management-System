@@ -15,6 +15,9 @@ import 'pages/faculty/faculty_dashboard.dart';
 import 'pages/faculty/add_attendance_page.dart';
 import 'pages/faculty/faculty_salary_summary_page.dart';
 import 'pages/faculty/faculty_profile_page.dart';
+import 'ui_tests/payments_mobile_ui.dart';
+import 'ui_tests/faculty_dashboard.dart';
+import 'ui_tests/add_attendance_page.dart';
 
 import 'services/auth_gate.dart';
 
@@ -92,7 +95,10 @@ class MyApp extends StatelessWidget {
             ),
           ),
 
-          home: const AuthGate(),
+          // home: const PaymentsMobileUI(),
+          home: const AddAttendancePageUI(),
+          // home: const FacultyDashboardUI(),
+
           routes: {
             // --- ADMIN ROUTES ---
             '/admin/dashboard': (context) => const AdminDashboard(),
