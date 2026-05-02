@@ -174,9 +174,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       }
                                     }
 
-                                    return ListView(
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                      physics: const BouncingScrollPhysics(),
+                                    return RefreshIndicator(
+                                      color: colors.primary,
+                                      backgroundColor: colors.card,
+                                      onRefresh: () async {
+                                        await Future.delayed(const Duration(milliseconds: 800));
+                                        setState(() {});
+                                      },
+                                      child: ListView(
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                        physics: const AlwaysScrollableScrollPhysics(),
                                       children: [
                                         if (todayNotifs.isNotEmpty) ...[
                                           Text("TODAY", style: TextStyle(color: colors.textMuted, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
@@ -190,6 +197,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                           ...olderNotifs.map((doc) => _buildNotificationItem(doc, colors, isDark)).toList(),
                                         ],
                                       ],
+                                    ),
                                     );
                                   },
                                 ),

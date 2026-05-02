@@ -36,7 +36,7 @@ class _AddAttendancePageState extends State<AddAttendancePage> {
 
   // --- FIREBASE SUBMIT LOGIC ---
   Future<void> _submitAllAttendance() async {
-    final colors = ThemeManager.instance.colors; // Grab colors for Snackbars
+    final colors = ThemeManager.instance.colors;
 
     for (var l in lectures) {
       if (l['class'] == null || l['subject'] == null) {
@@ -168,78 +168,89 @@ class _AddAttendancePageState extends State<AddAttendancePage> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 800),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
+                    child: Column( // ✅ CHANGED TO COLUMN TO LOCK TOP ELEMENTS
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // STATIC HEADER
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                           child: _buildHeader(colors, isDark),
                         ),
+                        // STATIC DATE SELECTOR
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: _buildDateSelectorCard(colors, isDark),
                         ),
                         const SizedBox(height: 24),
 
-                        // Main Content Area (Form & History)
-                        Container(
+                        // ✅ SCROLLABLE CONTENT AREA (Form & History)
+                        Expanded(
+                          child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.only(top: 24, left: 20, right: 20),
                             decoration: BoxDecoration(
                               color: isDark ? colors.card : Colors.transparent, // Floating list on light mode
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                               boxShadow: isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, -5))] : [],
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 120),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("Record Lectures", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
-                                  const SizedBox(height: 4),
-                                  Text("Select the class and subject for each lecture conducted.", style: TextStyle(color: colors.textMuted, fontSize: 13)),
-                                  const SizedBox(height: 20),
+                            child: RefreshIndicator(
+                              color: colors.primary,
+                              backgroundColor: colors.card,
+                              onRefresh: () async {
+                                await Future.delayed(const Duration(milliseconds: 800));
+                                setState(() {});
+                              },
+                              child: SingleChildScrollView( // ✅ SCROLL VIEW MOVED HERE
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 120),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text("Record Lectures", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
+                                      const SizedBox(height: 4),
+                                      Text("Select the class and subject for each lecture conducted.", style: TextStyle(color: colors.textMuted, fontSize: 13)),
+                                      const SizedBox(height: 20),
 
-                                  // Dynamic Lecture Forms
-                                  ...lectures.asMap().entries.map((entry) => _buildLectureForm(entry.key, entry.value, colors, isDark)),
+                                      // Dynamic Lecture Forms
+                                      ...lectures.asMap().entries.map((entry) => _buildLectureForm(entry.key, entry.value, colors, isDark)),
 
-                                  // Add Another Lecture Button
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: TextButton.icon(
-                                      onPressed: () {
-                                        setState(() {
-                                          lectures.add({'class': null, 'subject': null, 'customClass': null, 'customSubject': null});
-                                        });
-                                      },
-                                      icon: Icon(Icons.add_circle_outline, color: colors.primary, size: 20),
-                                      label: Text("Add Another Lecture", style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
-                                    ),
+                                      // Add Another Lecture Button
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: TextButton.icon(
+                                          onPressed: () {
+                                            setState(() {
+                                              lectures.add({'class': null, 'subject': null, 'customClass': null, 'customSubject': null});
+                                            });
+                                          },
+                                          icon: Icon(Icons.add_circle_outline, color: colors.primary, size: 20),
+                                          label: Text("Add Another Lecture", style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 20),
+
+                                      // Submit Button
+                                      _buildSubmitButton(colors),
+
+                                      const SizedBox(height: 40),
+                                      Container(height: 1, color: colors.textMain.withValues(alpha: 0.1)),
+                                      const SizedBox(height: 30),
+
+                                      // Recent Submissions Section
+                                      Text("Recent Submissions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
+                                      const SizedBox(height: 16),
+
+                                      // FIREBASE HISTORY INJECTED HERE
+                                      _buildFirebaseHistoryList(colors, isDark),
+                                    ],
                                   ),
-
-                                  const SizedBox(height: 20),
-
-                                  // Submit Button
-                                  _buildSubmitButton(colors),
-
-                                  const SizedBox(height: 40),
-                                  Container(height: 1, color: colors.textMain.withValues(alpha: 0.1)),
-                                  const SizedBox(height: 30),
-
-                                  // Recent Submissions Section
-                                  Text("Recent Submissions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
-                                  const SizedBox(height: 16),
-
-                                  // FIREBASE HISTORY INJECTED HERE
-                                  _buildFirebaseHistoryList(colors, isDark),
-                                ],
+                                ),
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -267,54 +278,53 @@ class _AddAttendancePageState extends State<AddAttendancePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Theme Toggle
-            // Theme Toggle
             ThemeSwitcher(
-              clipper: const ThemeSwitcherCircleClipper(),
-              builder: (context) {
-                return GestureDetector(
-                  onTap: () {
-                    ThemeManager.instance.toggleTheme();
-                    final newColors = ThemeManager.instance.colors;
-                    final newIsDark = ThemeManager.instance.isDarkMode;
-                    ThemeSwitcher.of(context).changeTheme(
-                      theme: ThemeData(
-                        brightness: newIsDark ? Brightness.dark : Brightness.light,
-                        primaryColor: newColors.primary,
-                        scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
-                        cardColor: newColors.card,
-                        appBarTheme: AppBarTheme(
-                          backgroundColor: newColors.card,
-                          foregroundColor: newColors.textMain,
+                clipper: const ThemeSwitcherCircleClipper(),
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      ThemeManager.instance.toggleTheme();
+                      final newColors = ThemeManager.instance.colors;
+                      final newIsDark = ThemeManager.instance.isDarkMode;
+                      ThemeSwitcher.of(context).changeTheme(
+                        theme: ThemeData(
+                          brightness: newIsDark ? Brightness.dark : Brightness.light,
+                          primaryColor: newColors.primary,
+                          scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
+                          cardColor: newColors.card,
+                          appBarTheme: AppBarTheme(
+                            backgroundColor: newColors.card,
+                            foregroundColor: newColors.textMain,
+                          ),
+                          useMaterial3: false,
+                          pageTransitionsTheme: const PageTransitionsTheme(
+                            builders: {
+                              TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                            },
+                          ),
                         ),
-                        useMaterial3: false,
-                        pageTransitionsTheme: const PageTransitionsTheme(
-                          builders: {
-                            TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                          },
-                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+                      child: Icon(
+                        ThemeManager.instance.currentMode == AppThemeMode.system
+                            ? Icons.brightness_auto
+                            : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
+                        color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(
-                      ThemeManager.instance.currentMode == AppThemeMode.system
-                          ? Icons.brightness_auto
-                          : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
-                      color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
-                      size: 20,
-                    ),
-                  ),
-                );
-              }
+                  );
+                }
             ),
             const SizedBox(width: 12),
 

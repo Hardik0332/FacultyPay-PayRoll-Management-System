@@ -119,7 +119,8 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
               // 2. Main Content
               SafeArea(
                 bottom: false,
-                child: Center(
+                child: Align(
+                  alignment: Alignment.topCenter, // <--- FIX: Aligns top, centers horizontally
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 800),
                     child: SingleChildScrollView(

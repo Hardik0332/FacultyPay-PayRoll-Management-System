@@ -122,10 +122,17 @@ class _AdminAddFacultyPageState extends State<AdminAddFacultyPage> {
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                               boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5))],
                             ),
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              padding: const EdgeInsets.only(top: 32, left: 20, right: 20, bottom: 120),
-                              child: Column(
+                            child: RefreshIndicator(
+                              color: colors.primary,
+                              backgroundColor: colors.card,
+                              onRefresh: () async {
+                                await Future.delayed(const Duration(milliseconds: 800));
+                                setState(() {});
+                              },
+                              child: SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.only(top: 32, left: 20, right: 20, bottom: 120),
+                                child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text("Faculty Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
@@ -164,6 +171,7 @@ class _AdminAddFacultyPageState extends State<AdminAddFacultyPage> {
                                   _buildSaveButton(colors),
                                 ],
                               ),
+                            ),
                             ),
                           ),
                         ),

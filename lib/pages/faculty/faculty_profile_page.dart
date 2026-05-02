@@ -230,18 +230,18 @@ class _FacultyProfilePageState extends State<FacultyProfilePage> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 800),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
+                    child: Column( // ✅ CHANGED TO COLUMN TO LOCK TOP ELEMENTS
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // STATIC HEADER
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           child: _buildHeader(colors, isDark),
                         ),
 
-                        // --- THE PROFILE CARD ---
-                        Container(
+                        // ✅ SCROLLABLE PROFILE CARD
+                        Expanded(
+                          child: Container(
                             width: double.infinity,
                             margin: const EdgeInsets.only(top: 10),
                             decoration: BoxDecoration(
@@ -251,65 +251,73 @@ class _FacultyProfilePageState extends State<FacultyProfilePage> {
                             ),
                             child: isLoading
                                 ? Center(child: CircularProgressIndicator(color: colors.primary))
-                                : Padding(
-                              padding: const EdgeInsets.only(top: 32, left: 20, right: 20, bottom: 120),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Avatar Hero Section
-                                  _buildAvatarSection(colors, isDark),
-                                  const SizedBox(height: 40),
-
-                                  // Editable Details
-                                  Text("Editable Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
-                                  const SizedBox(height: 16),
-                                  _buildEditableField("Full Name", Icons.person_outline, nameController, colors, isDark),
-                                  const SizedBox(height: 16),
-                                  _buildEditableField("UPI ID (For Payments)", Icons.qr_code, upiController, colors, isDark),
-
-                                  const SizedBox(height: 40),
-                                  Container(height: 1, color: colors.textMain.withValues(alpha: 0.1)),
-                                  const SizedBox(height: 30),
-
-                                  // Read-Only College Details
-                                  Row(
+                                : RefreshIndicator( // ✅ MOVED REFRESH INDICATOR HERE
+                              color: colors.primary,
+                              backgroundColor: colors.card,
+                              onRefresh: _loadUserData,
+                              child: SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 32, left: 20, right: 20, bottom: 120),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text("College Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(color: colors.textMain.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                                        child: Text("LOCKED", style: TextStyle(color: colors.textMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
-                                      )
+                                      // Avatar Hero Section
+                                      _buildAvatarSection(colors, isDark),
+                                      const SizedBox(height: 40),
+
+                                      // Editable Details
+                                      Text("Editable Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
+                                      const SizedBox(height: 16),
+                                      _buildEditableField("Full Name", Icons.person_outline, nameController, colors, isDark),
+                                      const SizedBox(height: 16),
+                                      _buildEditableField("UPI ID (For Payments)", Icons.qr_code, upiController, colors, isDark),
+
+                                      const SizedBox(height: 40),
+                                      Container(height: 1, color: colors.textMain.withValues(alpha: 0.1)),
+                                      const SizedBox(height: 30),
+
+                                      // Read-Only College Details
+                                      Row(
+                                        children: [
+                                          Text("College Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textMain)),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(color: colors.textMain.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                                            child: Text("LOCKED", style: TextStyle(color: colors.textMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                                          )
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildReadOnlyField("Email Address", email, Icons.email_outlined, colors, isDark),
+                                      const SizedBox(height: 16),
+
+                                      // Side-by-side Read-Only fields
+                                      Row(
+                                        children: [
+                                          Expanded(child: _buildReadOnlyField("Department", department.toUpperCase(), Icons.business, colors, isDark)),
+                                          const SizedBox(width: 16),
+                                          Expanded(child: _buildReadOnlyField("Hourly Rate", "₹${hourlyRate.toStringAsFixed(2)} / hr", Icons.payments_outlined, colors, isDark)),
+                                        ],
+                                      ),
+
+                                      const SizedBox(height: 40),
+
+                                      // Buttons Area
+                                      _buildSaveButton(colors),
+                                      const SizedBox(height: 16),
+                                      _buildResetPasswordButton(colors, isDark),
+                                      const SizedBox(height: 16),
+                                      _buildLogoutButton(colors),
                                     ],
                                   ),
-                                  const SizedBox(height: 16),
-                                  _buildReadOnlyField("Email Address", email, Icons.email_outlined, colors, isDark),
-                                  const SizedBox(height: 16),
-
-                                  // Side-by-side Read-Only fields
-                                  Row(
-                                    children: [
-                                      Expanded(child: _buildReadOnlyField("Department", department.toUpperCase(), Icons.business, colors, isDark)),
-                                      const SizedBox(width: 16),
-                                      Expanded(child: _buildReadOnlyField("Hourly Rate", "₹${hourlyRate.toStringAsFixed(2)} / hr", Icons.payments_outlined, colors, isDark)),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 40),
-
-                                  // Buttons Area
-                                  _buildSaveButton(colors),
-                                  const SizedBox(height: 16),
-                                  _buildResetPasswordButton(colors, isDark),
-                                  const SizedBox(height: 16),
-                                  _buildLogoutButton(colors),
-                                ],
+                                ),
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -329,54 +337,53 @@ class _FacultyProfilePageState extends State<FacultyProfilePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Theme Toggle
-            // Theme Toggle
             ThemeSwitcher(
-              clipper: const ThemeSwitcherCircleClipper(),
-              builder: (context) {
-                return GestureDetector(
-                  onTap: () {
-                    ThemeManager.instance.toggleTheme();
-                    final newColors = ThemeManager.instance.colors;
-                    final newIsDark = ThemeManager.instance.isDarkMode;
-                    ThemeSwitcher.of(context).changeTheme(
-                      theme: ThemeData(
-                        brightness: newIsDark ? Brightness.dark : Brightness.light,
-                        primaryColor: newColors.primary,
-                        scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
-                        cardColor: newColors.card,
-                        appBarTheme: AppBarTheme(
-                          backgroundColor: newColors.card,
-                          foregroundColor: newColors.textMain,
+                clipper: const ThemeSwitcherCircleClipper(),
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      ThemeManager.instance.toggleTheme();
+                      final newColors = ThemeManager.instance.colors;
+                      final newIsDark = ThemeManager.instance.isDarkMode;
+                      ThemeSwitcher.of(context).changeTheme(
+                        theme: ThemeData(
+                          brightness: newIsDark ? Brightness.dark : Brightness.light,
+                          primaryColor: newColors.primary,
+                          scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
+                          cardColor: newColors.card,
+                          appBarTheme: AppBarTheme(
+                            backgroundColor: newColors.card,
+                            foregroundColor: newColors.textMain,
+                          ),
+                          useMaterial3: false,
+                          pageTransitionsTheme: const PageTransitionsTheme(
+                            builders: {
+                              TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                            },
+                          ),
                         ),
-                        useMaterial3: false,
-                        pageTransitionsTheme: const PageTransitionsTheme(
-                          builders: {
-                            TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                          },
-                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+                      child: Icon(
+                        ThemeManager.instance.currentMode == AppThemeMode.system
+                            ? Icons.brightness_auto
+                            : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
+                        color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(
-                      ThemeManager.instance.currentMode == AppThemeMode.system
-                          ? Icons.brightness_auto
-                          : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
-                      color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
-                      size: 20,
-                    ),
-                  ),
-                );
-              }
+                  );
+                }
             ),
             const SizedBox(width: 12),
 

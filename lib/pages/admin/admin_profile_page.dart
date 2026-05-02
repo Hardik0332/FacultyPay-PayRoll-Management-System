@@ -224,20 +224,25 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               // 2. Main Content
               SafeArea(
                 bottom: false,
-                child: Center(
+                child: Align(
+                  alignment: Alignment.topCenter, // <--- FIX: Aligns top, centers horizontally
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 800),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                          child: _buildHeader(colors, isDark),
-                        ),
+                    child: RefreshIndicator(
+                      color: colors.primary,
+                      backgroundColor: colors.card,
+                      onRefresh: _loadUserData,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                            child: _buildHeader(colors, isDark),
+                          ),
 
-                        // Main Container
+                          // Main Container
                         Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
@@ -335,6 +340,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                           ),
                         ],
                       ),
+                    ),
                     ),
                   ),
                 ),

@@ -139,12 +139,20 @@ class _FacultyDashboardState extends State<FacultyDashboard> {
 
                       // FLOATING LIST
                       Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120),
-                          physics: const BouncingScrollPhysics(),
-                          children: [
-                            _buildFirebaseSalaryList(colors, isDark),
-                          ],
+                        child: RefreshIndicator(
+                          color: colors.primary,
+                          backgroundColor: colors.card,
+                          onRefresh: () async {
+                            await Future.delayed(const Duration(milliseconds: 1200));
+                            setState(() {});
+                          },
+                          child: ListView(
+                            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              _buildFirebaseSalaryList(colors, isDark),
+                            ],
+                          ),
                         ),
                       ),
                     ],

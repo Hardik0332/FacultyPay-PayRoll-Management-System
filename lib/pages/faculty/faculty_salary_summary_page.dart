@@ -12,22 +12,27 @@ import '../../theme/theme_manager.dart';
 // Make sure you have these imports pointing to your actual service files!
 import '../../services/report_service.dart';
 import '../../services/receipt_service.dart';
+
 class FacultySalaryHistoryPage extends StatefulWidget {
   const FacultySalaryHistoryPage({super.key});
   @override
   State<FacultySalaryHistoryPage> createState() => _FacultySalaryHistoryPageState();
 }
+
 class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
   int _currentTabIndex = 0; // 0: All, 1: Completed, 2: Pending
   final User? currentUser = FirebaseAuth.instance.currentUser;
+
   @override
   Widget build(BuildContext context) {
     if (currentUser == null) return const Center(child: Text("Not logged in"));
+
     return AnimatedBuilder(
       animation: ThemeManager.instance,
       builder: (context, child) {
         final colors = ThemeManager.instance.colors;
         final isDark = ThemeManager.instance.isDarkMode;
+
         return Stack(
           children: [
             // 1. Background Gradient (Dynamic)
@@ -55,6 +60,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
                     final String name = userData['name'] ?? 'Faculty Member';
                     final String dept = userData['department'] ?? 'General';
                     final String? avatarBase64 = userData['avatarBase64'];
+
                     return StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('attendance')
@@ -66,19 +72,23 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
                           return Center(child: CircularProgressIndicator(color: colors.primary));
                         }
                         final docs = attendanceSnap.data?.docs ?? [];
+
                         // --- CALCULATIONS ---
                         double totalEarnedYTD = 0;
                         double pendingPayment = 0;
                         Map<String, List<QueryDocumentSnapshot>> groupedData = {};
+
                         for (var doc in docs) {
                           final data = doc.data() as Map<String, dynamic>;
                           int lectures = data['lectures'] ?? 0;
                           String status = data['status'] ?? 'Pending';
                           Timestamp ts = data['date'];
                           String monthKey = DateFormat('MMMM yyyy').format(ts.toDate());
+
                           // Group by Month
                           if (!groupedData.containsKey(monthKey)) groupedData[monthKey] = [];
                           groupedData[monthKey]!.add(doc);
+
                           // Totals
                           if (status == 'Paid' || status == 'Completed') {
                             totalEarnedYTD += (lectures * hourlyRate);
@@ -86,59 +96,75 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
                             pendingPayment += (lectures * hourlyRate);
                           }
                         }
+
+                        // ✅ FIXED LAYOUT STRUCTURE
                         return SafeArea(
                           bottom: false,
-                          child: SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            child: Column(
+                          child: Column( // <-- Changed from SingleChildScrollView to Column
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Header
+                              // STATIC HEADER
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                                 child: _buildHeader(name, dept, hourlyRate, docs, avatarBase64, colors, isDark),
                               ),
-                              // Master Card
+                              // STATIC MASTER CARD
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 20),
                                 child: _buildMasterCard(totalEarnedYTD, pendingPayment, colors, isDark),
                               ),
                               const SizedBox(height: 32),
-                              // Main List Container
-                              Container(
+
+                              // ✅ EXPANDED CONTAINER (Takes remaining screen space)
+                              Expanded(
+                                child: Container(
                                   width: double.infinity,
                                   decoration: BoxDecoration(
-                                    color: isDark ? colors.card : Colors.transparent, // Floating in light mode
+                                    color: isDark ? colors.card : Colors.transparent,
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                                     boxShadow: isDark ? [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, -5))] : [],
                                   ),
                                   child: Column(
                                     children: [
-                                      // Segmented Tabs
+                                      // STATIC Segmented Tabs (Inside the white/dark container)
                                       Padding(
                                         padding: const EdgeInsets.only(top: 16, left: 20, right: 20, bottom: 16),
                                         child: _buildSegmentedTabs(colors, isDark),
                                       ),
-                                      // History List
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120), // Clearance for floating nav bar
-                                        child: Stack(
-                                              children: [
-                                                Positioned(
-                                                    left: 36, top: 30, bottom: 30,
-                                                    child: Container(width: 2, color: isDark ? colors.textMain.withValues(alpha: 0.1) : const Color(0xFFDDEBE3))
-                                                ),
-                                                Column(
-                                                  children: _buildMonthlyList(groupedData, hourlyRate, name, dept, colors, isDark),
-                                                ),
-                                              ],
+
+                                      // ✅ SCROLLABLE HISTORY LIST (With Pull-to-Refresh)
+                                      Expanded(
+                                        child: RefreshIndicator(
+                                          color: colors.primary,
+                                          backgroundColor: colors.card,
+                                          onRefresh: () async {
+                                            await Future.delayed(const Duration(milliseconds: 1200));
+                                            setState(() {});
+                                          },
+                                          child: SingleChildScrollView(
+                                            physics: const AlwaysScrollableScrollPhysics(),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120), // Clearance for nav bar
+                                              child: Stack(
+                                                children: [
+                                                  Positioned(
+                                                      left: 36, top: 30, bottom: 30,
+                                                      child: Container(width: 2, color: isDark ? colors.textMain.withValues(alpha: 0.1) : const Color(0xFFDDEBE3))
+                                                  ),
+                                                  Column(
+                                                    children: _buildMonthlyList(groupedData, hourlyRate, name, dept, colors, isDark),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
+                                          ),
                                         ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         );
                       },
@@ -152,6 +178,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
       },
     );
   }
+
   // --- HEADER (WITH PRINT SERVICE & THEME TOGGLE) ---
   Widget _buildHeader(String name, String dept, double hourlyRate, List<QueryDocumentSnapshot> docs, String? avatarBase64, AppColors colors, bool isDark) {
     return Row(
@@ -168,54 +195,53 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Theme Toggle
-            // Theme Toggle
             ThemeSwitcher(
-              clipper: const ThemeSwitcherCircleClipper(),
-              builder: (context) {
-                return GestureDetector(
-                  onTap: () {
-                    ThemeManager.instance.toggleTheme();
-                    final newColors = ThemeManager.instance.colors;
-                    final newIsDark = ThemeManager.instance.isDarkMode;
-                    ThemeSwitcher.of(context).changeTheme(
-                      theme: ThemeData(
-                        brightness: newIsDark ? Brightness.dark : Brightness.light,
-                        primaryColor: newColors.primary,
-                        scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
-                        cardColor: newColors.card,
-                        appBarTheme: AppBarTheme(
-                          backgroundColor: newColors.card,
-                          foregroundColor: newColors.textMain,
+                clipper: const ThemeSwitcherCircleClipper(),
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      ThemeManager.instance.toggleTheme();
+                      final newColors = ThemeManager.instance.colors;
+                      final newIsDark = ThemeManager.instance.isDarkMode;
+                      ThemeSwitcher.of(context).changeTheme(
+                        theme: ThemeData(
+                          brightness: newIsDark ? Brightness.dark : Brightness.light,
+                          primaryColor: newColors.primary,
+                          scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
+                          cardColor: newColors.card,
+                          appBarTheme: AppBarTheme(
+                            backgroundColor: newColors.card,
+                            foregroundColor: newColors.textMain,
+                          ),
+                          useMaterial3: false,
+                          pageTransitionsTheme: const PageTransitionsTheme(
+                            builders: {
+                              TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                            },
+                          ),
                         ),
-                        useMaterial3: false,
-                        pageTransitionsTheme: const PageTransitionsTheme(
-                          builders: {
-                            TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                          },
-                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+                      child: Icon(
+                        ThemeManager.instance.currentMode == AppThemeMode.system
+                            ? Icons.brightness_auto
+                            : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
+                        color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(
-                      ThemeManager.instance.currentMode == AppThemeMode.system
-                          ? Icons.brightness_auto
-                          : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
-                      color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
-                      size: 20,
-                    ),
-                  ),
-                );
-              }
+                  );
+                }
             ),
             const SizedBox(width: 12),
             // Print Button
@@ -270,6 +296,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
       ],
     );
   }
+
   // --- MASTER CARD ---
   Widget _buildMasterCard(double totalEarned, double pendingPayment, AppColors colors, bool isDark) {
     return Container(
@@ -323,6 +350,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
       ),
     );
   }
+
   // --- TABS ---
   Widget _buildSegmentedTabs(AppColors colors, bool isDark) {
     return Container(
@@ -338,6 +366,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
       ),
     );
   }
+
   Widget _buildTab(String title, int index, AppColors colors, bool isDark) {
     bool isActive = _currentTabIndex == index;
     return Expanded(
@@ -364,6 +393,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
       ),
     );
   }
+
   // --- MONTHLY LIST BUILDER ---
   List<Widget> _buildMonthlyList(Map<String, List<QueryDocumentSnapshot>> groupedData, double hourlyRate, String facultyName, String department, AppColors colors, bool isDark) {
     List<Widget> items = [];
@@ -387,6 +417,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
       Color textColor = colors.processing;
       Color bgColor = colors.processingBg;
       IconData icon = Icons.pending_actions;
+
       if (isAllPaid) {
         statusText = "COMPLETED";
         textColor = colors.success;
@@ -403,9 +434,11 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
         bgColor = colors.warningBg;
         icon = Icons.hourglass_empty;
       }
+
       // Tab Filtering Logic
       if (_currentTabIndex == 1 && !isAllPaid) continue; // Show only Paid
       if (_currentTabIndex == 2 && isAllPaid) continue; // Show only Pending/Approved
+
       items.add(
           _buildTransactionItem(
             icon: icon,
@@ -432,6 +465,7 @@ class _FacultySalaryHistoryPageState extends State<FacultySalaryHistoryPage> {
     }
     return items;
   }
+
   Widget _buildTransactionItem({
     required IconData icon,
     required String title,

@@ -45,40 +45,51 @@ class _AdminViewFacultyPageState extends State<AdminViewFacultyPage> {
               // 2. Main Content
               SafeArea(
                 bottom: false,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                          child: _buildHeader(colors, isDark),
+                child: RefreshIndicator(
+                  color: colors.primary,
+                  backgroundColor: colors.card,
+                  onRefresh: () async {
+                    await Future.delayed(const Duration(milliseconds: 1200));
+                    setState(() {});
+                  },
+                  // 1. SCROLL VIEW DIRECTLY UNDER REFRESH INDICATOR
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    // 2. ALIGN AND CONSTRAIN INSIDE THE SCROLL VIEW
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                              child: _buildHeader(colors, isDark),
+                            ),
+
+                            // Main List Container
+                            Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: colors.card, // ✅ DYNAMIC
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                                boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5))],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 16),
+                                    child: _buildListToolbar(colors, isDark),
+                                  ),
+
+                                  _buildFacultyList(colors, isDark),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-
-                        // Main List Container
-                        Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: colors.card, // ✅ DYNAMIC
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                              boxShadow: isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5))],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 16),
-                                  child: _buildListToolbar(colors, isDark),
-                                ),
-
-                                _buildFacultyList(colors, isDark),
-                              ],
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ),
@@ -110,54 +121,53 @@ class _AdminViewFacultyPageState extends State<AdminViewFacultyPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Theme Toggle
-            // Theme Toggle
             ThemeSwitcher(
-              clipper: const ThemeSwitcherCircleClipper(),
-              builder: (context) {
-                return GestureDetector(
-                  onTap: () {
-                    ThemeManager.instance.toggleTheme();
-                    final newColors = ThemeManager.instance.colors;
-                    final newIsDark = ThemeManager.instance.isDarkMode;
-                    ThemeSwitcher.of(context).changeTheme(
-                      theme: ThemeData(
-                        brightness: newIsDark ? Brightness.dark : Brightness.light,
-                        primaryColor: newColors.primary,
-                        scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
-                        cardColor: newColors.card,
-                        appBarTheme: AppBarTheme(
-                          backgroundColor: newColors.card,
-                          foregroundColor: newColors.textMain,
+                clipper: const ThemeSwitcherCircleClipper(),
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      ThemeManager.instance.toggleTheme();
+                      final newColors = ThemeManager.instance.colors;
+                      final newIsDark = ThemeManager.instance.isDarkMode;
+                      ThemeSwitcher.of(context).changeTheme(
+                        theme: ThemeData(
+                          brightness: newIsDark ? Brightness.dark : Brightness.light,
+                          primaryColor: newColors.primary,
+                          scaffoldBackgroundColor: newIsDark ? Colors.black : newColors.bgBottom,
+                          cardColor: newColors.card,
+                          appBarTheme: AppBarTheme(
+                            backgroundColor: newColors.card,
+                            foregroundColor: newColors.textMain,
+                          ),
+                          useMaterial3: false,
+                          pageTransitionsTheme: const PageTransitionsTheme(
+                            builders: {
+                              TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                              TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
+                            },
+                          ),
                         ),
-                        useMaterial3: false,
-                        pageTransitionsTheme: const PageTransitionsTheme(
-                          builders: {
-                            TargetPlatform.android: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.iOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.windows: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.macOS: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                            TargetPlatform.linux: SharedAxisPageTransitionsBuilder(transitionType: SharedAxisTransitionType.scaled),
-                          },
-                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? colors.textMain.withValues(alpha: 0.1) : colors.textMuted.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+                      child: Icon(
+                        ThemeManager.instance.currentMode == AppThemeMode.system
+                            ? Icons.brightness_auto
+                            : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
+                        color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(
-                      ThemeManager.instance.currentMode == AppThemeMode.system
-                          ? Icons.brightness_auto
-                          : (ThemeManager.instance.currentMode == AppThemeMode.light ? Icons.light_mode : Icons.dark_mode_outlined),
-                      color: ThemeManager.instance.currentMode == AppThemeMode.light ? Colors.amber : colors.textMain,
-                      size: 20,
-                    ),
-                  ),
-                );
-              }
+                  );
+                }
             ),
             const SizedBox(width: 12),
 
@@ -270,80 +280,72 @@ class _AdminViewFacultyPageState extends State<AdminViewFacultyPage> {
       query = query.where('uid', isEqualTo: _searchUid);
     }
 
-    return RefreshIndicator(
-      color: colors.primary,
-      backgroundColor: colors.cardHighlight,
-      onRefresh: () async {
-        await Future.delayed(const Duration(milliseconds: 1200));
-        setState(() {});
-      },
-      child: StreamBuilder<QuerySnapshot>(
-        stream: query.snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: colors.primary));
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error loading data", style: TextStyle(color: colors.error)));
-          }
+    return StreamBuilder<QuerySnapshot>(
+      stream: query.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator(color: colors.primary));
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text("Error loading data", style: TextStyle(color: colors.error)));
+        }
 
-          List<QueryDocumentSnapshot> docs = snapshot.data!.docs.toList();
+        List<QueryDocumentSnapshot> docs = snapshot.data!.docs.toList();
 
-          if (docs.isEmpty) {
-            return ListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  const SizedBox(height: 100),
-                  Icon(Icons.group_off_outlined, size: 60, color: colors.textMuted.withValues(alpha: 0.5)),
-                  const SizedBox(height: 16),
-                  Center(child: Text("No faculty members found.", style: TextStyle(color: colors.textMuted, fontSize: 16, fontWeight: FontWeight.bold))),
-                ]
-            );
-          }
-
-          if (_sortOrder != 'default') {
-            docs.sort((a, b) {
-              final dataA = a.data() as Map<String, dynamic>;
-              final dataB = b.data() as Map<String, dynamic>;
-
-              if (_sortOrder == 'alphabetical') {
-                String nameA = (dataA['name'] ?? '').toString().toLowerCase();
-                String nameB = (dataB['name'] ?? '').toString().toLowerCase();
-                return nameA.compareTo(nameB);
-              } else {
-                double rateA = (dataA['hourlyRate'] is int) ? (dataA['hourlyRate'] as int).toDouble() : (dataA['hourlyRate'] as double? ?? 0.0);
-                double rateB = (dataB['hourlyRate'] is int) ? (dataB['hourlyRate'] as int).toDouble() : (dataB['hourlyRate'] as double? ?? 0.0);
-
-                if (_sortOrder == 'highest') {
-                  return rateB.compareTo(rateA);
-                } else {
-                  return rateA.compareTo(rateB);
-                }
-              }
-            });
-          }
-
-          return ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120),
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-
-              final String name = data['name'] ?? 'Unknown';
-              final String email = data['email'] ?? 'No Email';
-              final String dept = data['department'] ?? 'General';
-              final double rate = (data['hourlyRate'] is int) ? (data['hourlyRate'] as int).toDouble() : (data['hourlyRate'] as double? ?? 0.0);
-              final String? avatarBase64 = data['avatarBase64'];
-
-              return _buildFacultyCard(doc.id, data, name, email, dept, rate, avatarBase64, colors, isDark);
-            },
+        if (docs.isEmpty) {
+          return ListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                const SizedBox(height: 100),
+                Icon(Icons.group_off_outlined, size: 60, color: colors.textMuted.withValues(alpha: 0.5)),
+                const SizedBox(height: 16),
+                Center(child: Text("No faculty members found.", style: TextStyle(color: colors.textMuted, fontSize: 16, fontWeight: FontWeight.bold))),
+              ]
           );
-        },
-      ),
+        }
+
+        if (_sortOrder != 'default') {
+          docs.sort((a, b) {
+            final dataA = a.data() as Map<String, dynamic>;
+            final dataB = b.data() as Map<String, dynamic>;
+
+            if (_sortOrder == 'alphabetical') {
+              String nameA = (dataA['name'] ?? '').toString().toLowerCase();
+              String nameB = (dataB['name'] ?? '').toString().toLowerCase();
+              return nameA.compareTo(nameB);
+            } else {
+              double rateA = (dataA['hourlyRate'] is int) ? (dataA['hourlyRate'] as int).toDouble() : (dataA['hourlyRate'] as double? ?? 0.0);
+              double rateB = (dataB['hourlyRate'] is int) ? (dataB['hourlyRate'] as int).toDouble() : (dataB['hourlyRate'] as double? ?? 0.0);
+
+              if (_sortOrder == 'highest') {
+                return rateB.compareTo(rateA);
+              } else {
+                return rateA.compareTo(rateB);
+              }
+            }
+          });
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final doc = docs[index];
+            final data = doc.data() as Map<String, dynamic>;
+
+            final String name = data['name'] ?? 'Unknown';
+            final String email = data['email'] ?? 'No Email';
+            final String dept = data['department'] ?? 'General';
+            final double rate = (data['hourlyRate'] is int) ? (data['hourlyRate'] as int).toDouble() : (data['hourlyRate'] as double? ?? 0.0);
+            final String? avatarBase64 = data['avatarBase64'];
+
+            return _buildFacultyCard(doc.id, data, name, email, dept, rate, avatarBase64, colors, isDark);
+          },
+        );
+      },
     );
   }
 
@@ -479,9 +481,6 @@ class _AdminViewFacultyPageState extends State<AdminViewFacultyPage> {
   }
 }
 
-// ============================================================================
-// THE BEAUTIFUL FLOATING SEARCH DIALOG
-// ============================================================================
 class FacultySearchDialog extends StatefulWidget {
   const FacultySearchDialog({super.key});
 
@@ -517,7 +516,6 @@ class _FacultySearchDialogState extends State<FacultySearchDialog> {
                 ),
                 child: Column(
                   children: [
-                    // Search Input Bar
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: TextField(
@@ -539,10 +537,7 @@ class _FacultySearchDialogState extends State<FacultySearchDialog> {
                         },
                       ),
                     ),
-
                     Container(height: 1, color: colors.textMain.withValues(alpha: 0.05)),
-
-                    // Search Results
                     Expanded(
                       child: query.isEmpty
                           ? Center(
@@ -554,7 +549,6 @@ class _FacultySearchDialogState extends State<FacultySearchDialog> {
                           if (!snapshot.hasData) {
                             return Center(child: CircularProgressIndicator(color: colors.primary));
                           }
-
                           final docs = snapshot.data!.docs.where((doc) {
                             final data = doc.data() as Map<String, dynamic>;
                             final name = (data['name'] ?? '').toString().toLowerCase();
@@ -601,6 +595,3 @@ class _FacultySearchDialogState extends State<FacultySearchDialog> {
     );
   }
 }
-
-
-
