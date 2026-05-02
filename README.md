@@ -1,7 +1,7 @@
 <div align="center">
   <h1>FacultyPay</h1>
   <img src="assets/app_icon.png" alt="FacultyPay Logo" width="120" height="120" /><br /><br />
-<a href="https://github.com/Hardik0332/FacultyPay-PayRoll-Management-System/releases/latest"><img src="https://img.shields.io/badge/Download-APK-2D80EC?logo=android" width="226" ></a> &nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://github.com/Hardik0332/FacultyPay-PayRoll-Management-System/releases/download/v1.0.0/FacultyPay.apk"><img src="https://img.shields.io/badge/Download-APK-2D80EC?logo=android" width="226" ></a> &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://facultypay.web.app"><img src="https://img.shields.io/badge/Open_Web-APP-ff9a00?logo=firebase&logoColor=FFCA28" width="230"></a><br><br>
 </div>
 
